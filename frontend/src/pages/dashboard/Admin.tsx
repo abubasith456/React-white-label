@@ -14,9 +14,10 @@ const Admin: React.FC = () => {
   const [newCategory, setNewCategory] = useState({ name: '' })
   const [admins, setAdmins] = useState<string[]>([])
   const [newAdminEmail, setNewAdminEmail] = useState('')
+  const [orders, setOrders] = useState<any[]>([])
 
   useEffect(() => {
-    if (token && !currentUser) return // waiting for me endpoint
+    if (token && !currentUser) return
     if (!currentUser || currentUser.role !== 'admin') {
       navigate('/login')
     }
@@ -28,6 +29,7 @@ const Admin: React.FC = () => {
     axios.get(`${tenant.apiBaseUrl}/products`).then(r=>setProducts(r.data.products))
     axios.get(`${tenant.apiBaseUrl}/categories`).then(r=>setCategories(r.data.categories))
     axios.get(`${tenant.apiBaseUrl}/admins`, auth).then(r=>setAdmins(r.data.admins)).catch(()=>{})
+    axios.get(`${tenant.apiBaseUrl}/orders/admin`, auth).then(r=>setOrders(r.data.orders)).catch(()=>{})
   }
 
   useEffect(() => { refresh() }, [tenant.apiBaseUrl])
@@ -64,6 +66,11 @@ const Admin: React.FC = () => {
     refresh()
   }
 
+  const updateStatus = async (id: string, status: string) => {
+    await axios.put(`${tenant.apiBaseUrl}/orders/${id}/status`, { status }, auth)
+    refresh()
+  }
+
   if (!currentUser || currentUser.role !== 'admin') {
     return null
   }
@@ -85,6 +92,41 @@ const Admin: React.FC = () => {
               </li>
             ))}
           </ul>
+        </div>
+
+        <div className="card space-y-3">
+          <h2 className="text-xl font-semibold">Orders</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-600">
+                  <th className="p-2">Order</th>
+                  <th className="p-2">Status</th>
+                  <th className="p-2">Total</th>
+                  <th className="p-2">Placed</th>
+                  <th className="p-2">Invoice</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((o:any) => (
+                  <tr key={o.id} className="border-t">
+                    <td className="p-2 font-medium">{o.id}</td>
+                    <td className="p-2">
+                      <select className="input" value={o.status} onChange={e=>updateStatus(o.id, e.target.value)}>
+                        <option value="created">Created</option>
+                        <option value="packed">Packed</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                      </select>
+                    </td>
+                    <td className="p-2">${o.total?.toFixed?.(2) || o.total}</td>
+                    <td className="p-2">{new Date(o.createdAt).toLocaleString()}</td>
+                    <td className="p-2"><a className="text-brand-primary underline" href={`${tenant.apiBaseUrl}/orders/${o.id}/invoice`} target="_blank" rel="noreferrer">Invoice</a></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="card space-y-3">

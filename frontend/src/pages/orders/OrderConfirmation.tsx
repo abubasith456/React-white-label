@@ -74,7 +74,7 @@ const OrderConfirmation: React.FC = () => {
         </div>
 
         <div className="flex gap-3">
-          <button onClick={downloadInvoice} className="btn-primary">Download invoice</button>
+          <a href={`${tenant.apiBaseUrl}/orders/${order.id}/invoice`} target="_blank" rel="noreferrer" className="btn-primary">Download invoice</a>
           <Link to="/orders" className="btn-primary bg-brand-secondary">View all orders</Link>
           <Link to="/products" className="btn-primary bg-brand-secondary">Continue shopping</Link>
         </div>

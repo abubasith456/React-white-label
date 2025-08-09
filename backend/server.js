@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url'
 import { nanoid } from 'nanoid'
 import dotenv from 'dotenv'
 import mongoose from 'mongoose'
+import PDFDocument from 'pdfkit'
 
 dotenv.config()
 
@@ -347,6 +348,86 @@ app.get('/api/:tenant/orders/:id', authMiddleware, async (req, res) => {
   res.json({ order })
 })
 
+app.get('/api/:tenant/orders/admin', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  // admin check
+  if (useMongo) {
+    const t = await TenantModel.findOne({ id: tenant })
+    const user = await UserModel.findOne({ tenantId: tenant, id: req.session.userId })
+    if (!t || !user || !t.adminEmails.includes(user.email)) return res.status(403).json({ error: 'Forbidden' })
+    const orders = await OrderModel.find({ tenantId: tenant }).sort({ createdAt: -1 })
+    return res.json({ orders })
+  }
+  const t = getTenantLocal(tenant)
+  const user = t?.users.find(u => u.id === req.session.userId)
+  if (!t || !user || !isAdminTenant(t, user)) return res.status(403).json({ error: 'Forbidden' })
+  res.json({ orders: memListAllOrders(tenant) })
+})
+
+app.put('/api/:tenant/orders/:id/status', authMiddleware, async (req, res) => {
+  const { tenant, id } = req.params
+  const { status } = req.body
+  const allowed = ['created','packed','shipped','delivered']
+  if (!allowed.includes(status)) return res.status(400).json({ error: 'Invalid status' })
+  // admin check
+  if (useMongo) {
+    const t = await TenantModel.findOne({ id: tenant })
+    const user = await UserModel.findOne({ tenantId: tenant, id: req.session.userId })
+    if (!t || !user || !t.adminEmails.includes(user.email)) return res.status(403).json({ error: 'Forbidden' })
+    const order = await OrderModel.findOneAndUpdate({ tenantId: tenant, id }, { status }, { new: true })
+    if (!order) return res.status(404).json({ error: 'Not found' })
+    return res.json({ order })
+  }
+  const t = getTenantLocal(tenant)
+  const user = t?.users.find(u => u.id === req.session.userId)
+  if (!t || !user || !isAdminTenant(t, user)) return res.status(403).json({ error: 'Forbidden' })
+  const order = memUpdateOrderStatus(tenant, id, status)
+  if (!order) return res.status(404).json({ error: 'Not found' })
+  res.json({ order })
+})
+
+app.get('/api/:tenant/orders/:id/invoice', authMiddleware, async (req, res) => {
+  const { tenant, id } = req.params
+  const { userId } = req.session
+  let order
+  if (useMongo) {
+    order = await OrderModel.findOne({ tenantId: tenant, id })
+  } else {
+    order = memGetOrder(tenant, userId, id) || memGetOrderAny(tenant, id)
+  }
+  if (!order) return res.status(404).json({ error: 'Not found' })
+  // Only owner or admin
+  if (useMongo) {
+    const t = await TenantModel.findOne({ id: tenant })
+    const user = await UserModel.findOne({ tenantId: tenant, id: userId })
+    const isAdmin = !!(t && user && t.adminEmails.includes(user.email))
+    if (!isAdmin && order.userId !== userId) return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', `inline; filename=invoice-${order.id}.pdf`)
+  const doc = new PDFDocument({ size: 'A4', margin: 50 })
+  doc.pipe(res)
+  doc.fontSize(20).text(`Invoice #${order.id}`)
+  doc.moveDown()
+  doc.fontSize(12).text(`Date: ${new Date(order.createdAt).toLocaleString()}`)
+  doc.text(`Tenant: ${tenant}`)
+  if (order.address) {
+    doc.text('Ship To:')
+    doc.text(`${order.address.line1}${order.address.line2 ? ', ' + order.address.line2 : ''}`)
+    doc.text(`${order.address.city}, ${order.address.state} ${order.address.postalCode}`)
+    doc.text(`${order.address.country}`)
+  }
+  doc.moveDown()
+  doc.text('Items:')
+  order.items.forEach((it) => {
+    doc.text(`${it.name} x${it.quantity} - $${(it.price * it.quantity).toFixed(2)}`)
+  })
+  doc.moveDown()
+  doc.fontSize(14).text(`Total: $${order.total.toFixed ? order.total.toFixed(2) : order.total}`)
+  doc.end()
+})
+
 app.get('/api/:tenant/addresses', authMiddleware, async (req, res) => {
   const { tenant } = req.params
   const { userId } = req.session
@@ -489,6 +570,9 @@ const memOrders = []
 function memSaveOrder(order) { memOrders.push(order) }
 function memListOrders(tenantId, userId) { return memOrders.filter(o => o.tenantId === tenantId && o.userId === userId).sort((a,b)=>b.createdAt - a.createdAt) }
 function memGetOrder(tenantId, userId, id) { return memOrders.find(o => o.tenantId === tenantId && o.userId === userId && o.id === id) }
+function memGetOrderAny(tenantId, id) { return memOrders.find(o => o.tenantId === tenantId && o.id === id) }
+function memListAllOrders(tenantId) { return memOrders.filter(o => o.tenantId === tenantId).sort((a,b)=>b.createdAt - a.createdAt) }
+function memUpdateOrderStatus(tenantId, id, status) { const o = memOrders.find(x=>x.tenantId===tenantId && x.id===id); if (o) o.status = status; return o }
 
 const PORT = process.env.PORT || 4000
 
