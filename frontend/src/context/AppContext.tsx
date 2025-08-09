@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { detectTenantId, tenants, type TenantConfig } from '@/config/AppConfig'
 import axios from 'axios'
+import toast from 'react-hot-toast'
 
 export type User = {
   id: string
@@ -30,6 +31,7 @@ export type AppContextType = {
   currentUser: User | null
   cart: CartItem[]
   addresses: Address[]
+  wishlist: string[]
   isLoading: boolean
   setTenantId: (tenantId: string) => void
   login: (email: string, password: string) => Promise<void>
@@ -40,6 +42,7 @@ export type AppContextType = {
   refreshCart: () => Promise<void>
   refreshAddresses: () => Promise<void>
   addAddress: (address: Omit<Address, 'id'>) => Promise<void>
+  toggleWishlist: (productId: string) => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -51,6 +54,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [cart, setCart] = useState<CartItem[]>([])
   const [addresses, setAddresses] = useState<Address[]>([])
+  const [wishlist, setWishlist] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(`wishlist:${tenantId}`) || '[]') } catch { return [] }
+  })
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
   const api = useMemo(() => {
@@ -69,6 +75,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     document.title = tenant.strings.appTitle
   }, [tenant])
 
+  useEffect(() => {
+    localStorage.setItem(`wishlist:${tenantId}`, JSON.stringify(wishlist))
+  }, [wishlist, tenantId])
+
   const setTenantId = (id: string) => {
     localStorage.setItem('tenantId', id)
     setTenantIdState(id)
@@ -82,6 +92,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('token', data.token)
       setCurrentUser(data.user)
       await Promise.all([refreshCart(), refreshAddresses()])
+      toast.success(`Welcome back, ${data.user.name}!`)
+    } catch (err: any) {
+      toast.error('Login failed')
+      throw err
     } finally {
       setIsLoading(false)
     }
@@ -94,6 +108,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setToken(data.token)
       localStorage.setItem('token', data.token)
       setCurrentUser(data.user)
+      toast.success('Account created!')
+    } catch (err: any) {
+      toast.error('Registration failed')
+      throw err
     } finally {
       setIsLoading(false)
     }
@@ -104,6 +122,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('token')
     setCurrentUser(null)
     setCart([])
+    toast('Logged out', { icon: '👋' })
   }
 
   const refreshCart = async () => {
@@ -121,16 +140,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addToCart = async (productId: string, quantity: number = 1) => {
     await api.post('/cart', { productId, quantity })
     await refreshCart()
+    toast.success('Added to cart')
   }
 
   const removeFromCart = async (productId: string) => {
     await api.delete(`/cart/${productId}`)
     await refreshCart()
+    toast('Removed from cart')
   }
 
   const addAddress = async (address: Omit<Address, 'id'>) => {
     await api.post('/addresses', address)
     await refreshAddresses()
+    toast.success('Address saved')
+  }
+
+  const toggleWishlist = (productId: string) => {
+    setWishlist(prev => {
+      const exists = prev.includes(productId)
+      const next = exists ? prev.filter(id => id !== productId) : [...prev, productId]
+      toast(exists ? 'Removed from wishlist' : 'Added to wishlist', { icon: exists ? '💔' : '💖' })
+      return next
+    })
   }
 
   const value: AppContextType = {
@@ -139,6 +170,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     currentUser,
     cart,
     addresses,
+    wishlist,
     isLoading,
     setTenantId,
     login,
@@ -149,6 +181,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     refreshCart,
     refreshAddresses,
     addAddress,
+    toggleWishlist,
   }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
