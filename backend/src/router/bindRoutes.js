@@ -4,10 +4,12 @@ import { productsRouter, categoriesRouter } from './products.js'
 import { cartRouter, addressesRouter } from './cart.js'
 import { ordersRouter, adminOrdersRouter } from './orders.js'
 import { adminsRouter } from './admins.js'
+import { tenantRouter } from './tenant.js'
 import { bindSession } from '../middleware/auth.js'
 
 app.use(bindSession)
 
+app.use('/api/:tenant', tenantRouter)
 app.use('/api/:tenant/auth', authRouter)
 app.use('/api/:tenant/products', productsRouter)
 app.use('/api/:tenant/categories', categoriesRouter)

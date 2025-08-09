@@ -1,115 +1,86 @@
 import { Router } from 'express'
-import { USE_MONGO } from '../config/env.js'
-import { AddressModel, CartModel } from '../db/mongo.js'
-import { getTenantLocal } from '../config/tenants.js'
+import { cartService, addressService } from '../services/cartService.js'
 import { requireAuth } from '../middleware/auth.js'
-import { nanoid } from 'nanoid'
-import { memGetCart, memSetCart, memGetAddresses, memSetAddresses } from '../repository/inMemory.js'
 
 export const cartRouter = Router({ mergeParams: true })
 export const addressesRouter = Router({ mergeParams: true })
 
 cartRouter.get('/', requireAuth, async (req, res) => {
-  const { tenant } = req.params
-  const { userId } = req.session
-  if (USE_MONGO) {
-    const doc = await CartModel.findOne({ tenantId: tenant, userId })
-    return res.json({ items: doc?.items || [] })
+  try {
+    const { tenant } = req.params
+    const { userId } = req.session
+    const result = await cartService.getCart(tenant, userId)
+    res.json(result)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
   }
-  const key = `${tenant}:${userId}`
-  const items = memGetCart(key)
-  res.json({ items })
 })
 
 cartRouter.post('/', requireAuth, async (req, res) => {
-  const { tenant } = req.params
-  const { userId } = req.session
-  const { productId, quantity } = req.body
-  if (USE_MONGO) {
-    const doc = (await CartModel.findOne({ tenantId: tenant, userId })) || await CartModel.create({ tenantId: tenant, userId, items: [] })
-    const existing = doc.items.find(i => i.productId === productId)
-    if (existing) existing.quantity += Number(quantity) || 1
-    else doc.items.push({ productId, quantity: Number(quantity) || 1 })
-    await doc.save()
-    return res.json({ items: doc.items })
+  try {
+    const { tenant } = req.params
+    const { userId } = req.session
+    const { productId, quantity } = req.body
+    const result = await cartService.addToCart(tenant, userId, productId, quantity)
+    res.json(result)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
   }
-  const key = `${tenant}:${userId}`
-  const items = memGetCart(key)
-  const existing = items.find(i => i.productId === productId)
-  if (existing) existing.quantity += Number(quantity) || 1
-  else items.push({ productId, quantity: Number(quantity) || 1 })
-  memSetCart(key, items)
-  res.json({ items })
 })
 
 cartRouter.delete('/:productId', requireAuth, async (req, res) => {
-  const { tenant } = req.params
-  const { userId } = req.session
-  const { productId } = req.params
-  if (USE_MONGO) {
-    const doc = (await CartModel.findOne({ tenantId: tenant, userId })) || await CartModel.create({ tenantId: tenant, userId, items: [] })
-    doc.items = doc.items.filter(i => i.productId !== productId)
-    await doc.save()
-    return res.json({ items: doc.items })
+  try {
+    const { tenant, productId } = req.params
+    const { userId } = req.session
+    const result = await cartService.removeFromCart(tenant, userId, productId)
+    res.json(result)
+  } catch (error) {
+    res.status(400).json({ error: error.message })
   }
-  const key = `${tenant}:${userId}`
-  const items = memGetCart(key).filter(i => i.productId !== productId)
-  memSetCart(key, items)
-  res.json({ items })
 })
 
 addressesRouter.get('/', requireAuth, async (req, res) => {
-  const { tenant } = req.params
-  const { userId } = req.session
-  if (USE_MONGO) {
-    const list = await AddressModel.find({ tenantId: tenant, userId })
-    return res.json({ addresses: list })
+  try {
+    const { tenant } = req.params
+    const { userId } = req.session
+    const addresses = await addressService.getAddresses(tenant, userId)
+    res.json({ addresses })
+  } catch (error) {
+    res.status(400).json({ error: error.message })
   }
-  const key = `${tenant}:${userId}`
-  res.json({ addresses: memGetAddresses(key) })
 })
 
 addressesRouter.post('/', requireAuth, async (req, res) => {
-  const { tenant } = req.params
-  const { userId } = req.session
-  if (USE_MONGO) {
-    const address = await AddressModel.create({ tenantId: tenant, userId, id: nanoid(), ...req.body })
-    return res.json({ address })
+  try {
+    const { tenant } = req.params
+    const { userId } = req.session
+    const address = await addressService.addAddress(tenant, userId, req.body)
+    res.json({ address })
+  } catch (error) {
+    res.status(400).json({ error: error.message })
   }
-  const key = `${tenant}:${userId}`
-  const list = memGetAddresses(key)
-  const address = { id: nanoid(), ...req.body }
-  list.push(address)
-  memSetAddresses(key, list)
-  res.json({ address })
 })
 
 addressesRouter.put('/:id', requireAuth, async (req, res) => {
-  const { tenant, id } = req.params
-  const { userId } = req.session
-  if (USE_MONGO) {
-    const updated = await AddressModel.findOneAndUpdate({ tenantId: tenant, userId, id }, req.body, { new: true })
-    if (!updated) return res.status(404).json({ error: 'Not found' })
-    return res.json({ address: updated })
+  try {
+    const { tenant, id } = req.params
+    const { userId } = req.session
+    const address = await addressService.updateAddress(tenant, userId, id, req.body)
+    res.json({ address })
+  } catch (error) {
+    const statusCode = error.message === 'Address not found' ? 404 : 400
+    res.status(statusCode).json({ error: error.message })
   }
-  const key = `${tenant}:${userId}`
-  const list = memGetAddresses(key)
-  const idx = list.findIndex(a => a.id === id)
-  if (idx === -1) return res.status(404).json({ error: 'Not found' })
-  list[idx] = { ...list[idx], ...req.body }
-  memSetAddresses(key, list)
-  res.json({ address: list[idx] })
 })
 
 addressesRouter.delete('/:id', requireAuth, async (req, res) => {
-  const { tenant, id } = req.params
-  const { userId } = req.session
-  if (USE_MONGO) {
-    await AddressModel.deleteOne({ tenantId: tenant, userId, id })
-    return res.json({ ok: true })
+  try {
+    const { tenant, id } = req.params
+    const { userId } = req.session
+    await addressService.deleteAddress(tenant, userId, id)
+    res.json({ ok: true })
+  } catch (error) {
+    const statusCode = error.message === 'Address not found' ? 404 : 400
+    res.status(statusCode).json({ error: error.message })
   }
-  const key = `${tenant}:${userId}`
-  const list = memGetAddresses(key).filter(a => a.id !== id)
-  memSetAddresses(key, list)
-  res.json({ ok: true })
 })
