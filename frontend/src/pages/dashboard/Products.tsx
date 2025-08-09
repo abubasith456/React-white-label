@@ -14,6 +14,7 @@ const Products: React.FC = () => {
   const [query, setQuery] = useState('')
   const [cat, setCat] = useState('')
   const [sort, setSort] = useState('name-asc')
+  const [qtyMap, setQtyMap] = useState<Record<string, number>>({})
 
   useEffect(() => {
     setLoading(true)
@@ -35,6 +36,10 @@ const Products: React.FC = () => {
     }
     return list
   }, [products, query, cat, sort])
+
+  const qty = (id: string) => qtyMap[id] ?? 1
+  const inc = (id: string) => setQtyMap(m => ({ ...m, [id]: Math.min(99, (m[id] ?? 1) + 1) }))
+  const dec = (id: string) => setQtyMap(m => ({ ...m, [id]: Math.max(1, (m[id] ?? 1) - 1) }))
 
   return (
     <AnimatedContainer>
@@ -60,7 +65,14 @@ const Products: React.FC = () => {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map(p => (
-              <ProductCard key={p.id} id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
+              <div key={p.id} className="space-y-2">
+                <ProductCard id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={() => addToCart(p.id, qty(p.id))} />
+                <div className="flex items-center justify-end gap-2">
+                  <button className="px-2 py-1 rounded bg-gray-100" onClick={() => dec(p.id)}>-</button>
+                  <span className="w-8 text-center">{qty(p.id)}</span>
+                  <button className="px-2 py-1 rounded bg-gray-100" onClick={() => inc(p.id)}>+</button>
+                </div>
+              </div>
             ))}
           </div>
         )}

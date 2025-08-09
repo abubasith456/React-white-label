@@ -59,6 +59,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   })
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
+  const guestCartKey = `guestCart:${tenantId}`
+
   const api = useMemo(() => {
     const instance = axios.create({ baseURL: tenant.apiBaseUrl })
     instance.interceptors.request.use((config) => {
@@ -79,9 +81,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(`wishlist:${tenantId}`, JSON.stringify(wishlist))
   }, [wishlist, tenantId])
 
+  useEffect(() => {
+    // Initialize cart from backend or guest storage
+    if (token) {
+      void refreshCart()
+    } else {
+      try {
+        const stored = JSON.parse(localStorage.getItem(guestCartKey) || '[]') as CartItem[]
+        setCart(stored)
+      } catch { /* noop */ }
+    }
+  }, [token, tenantId])
+
   const setTenantId = (id: string) => {
     localStorage.setItem('tenantId', id)
     setTenantIdState(id)
+  }
+
+  async function mergeGuestCartToBackend() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(guestCartKey) || '[]') as CartItem[]
+      if (stored?.length) {
+        for (const item of stored) {
+          await api.post('/cart', { productId: item.productId, quantity: item.quantity })
+        }
+        localStorage.removeItem(guestCartKey)
+      }
+    } catch { /* ignore */ }
   }
 
   const login = async (email: string, password: string) => {
@@ -91,6 +117,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setToken(data.token)
       localStorage.setItem('token', data.token)
       setCurrentUser(data.user)
+      await mergeGuestCartToBackend()
       await Promise.all([refreshCart(), refreshAddresses()])
       toast.success(`Welcome back, ${data.user.name}!`)
     } catch (err: any) {
@@ -108,6 +135,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setToken(data.token)
       localStorage.setItem('token', data.token)
       setCurrentUser(data.user)
+      await mergeGuestCartToBackend()
       toast.success('Account created!')
     } catch (err: any) {
       toast.error('Registration failed')
@@ -137,15 +165,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAddresses(data.addresses)
   }
 
+  const showCartToast = (message: string) => {
+    toast((t) => (
+      <div className="flex items-center gap-3">
+        <span>{message}</span>
+        <button className="text-brand-primary underline" onClick={() => { window.location.href = '/cart'; toast.dismiss(t.id) }}>View cart</button>
+      </div>
+    ))
+  }
+
   const addToCart = async (productId: string, quantity: number = 1) => {
-    await api.post('/cart', { productId, quantity })
-    await refreshCart()
-    toast.success('Added to cart')
+    if (token) {
+      await api.post('/cart', { productId, quantity })
+      await refreshCart()
+    } else {
+      setCart(prev => {
+        const existing = prev.find(i => i.productId === productId)
+        if (existing) existing.quantity += quantity
+        else prev.push({ productId, quantity })
+        const next = [...prev]
+        localStorage.setItem(guestCartKey, JSON.stringify(next))
+        return next
+      })
+    }
+    showCartToast('Added to cart')
   }
 
   const removeFromCart = async (productId: string) => {
-    await api.delete(`/cart/${productId}`)
-    await refreshCart()
+    if (token) {
+      await api.delete(`/cart/${productId}`)
+      await refreshCart()
+    } else {
+      setCart(prev => {
+        const next = prev.filter(i => i.productId !== productId)
+        localStorage.setItem(guestCartKey, JSON.stringify(next))
+        return next
+      })
+    }
     toast('Removed from cart')
   }
 
