@@ -2,7 +2,6 @@ import { app } from './router/index.js'
 import { PORT, USE_MONGO } from './config/env.js'
 import { connectMongo } from './db/mongo.js'
 import './router/bindRoutes.js'
-import '../server.js' // reuse remaining legacy routes
 
 ;(async () => {
   if (USE_MONGO) await connectMongo()
