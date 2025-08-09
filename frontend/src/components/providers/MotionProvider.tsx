@@ -11,7 +11,7 @@ interface MotionProviderProps {
 export const MotionProvider: React.FC<MotionProviderProps> = ({
   children,
   features = motionFeatures,
-  strict = true
+  strict = false  // Set to false to allow motion components
 }) => {
   return (
     <LazyMotion features={features} strict={strict}>
