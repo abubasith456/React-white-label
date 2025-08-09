@@ -3,13 +3,21 @@ import { useApp } from '@/context/AppContext'
 import axios from 'axios'
 import { Button } from '@/components/common/Button'
 import { AnimatedContainer } from '@/components/common/AnimatedContainer'
+import { useNavigate } from 'react-router-dom'
 
 const Admin: React.FC = () => {
-  const { tenant, token } = useApp()
+  const { tenant, token, currentUser } = useApp()
+  const navigate = useNavigate()
   const [products, setProducts] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
   const [newProduct, setNewProduct] = useState({ name: '', description: '', price: 0, image: '', categoryId: '' })
   const [newCategory, setNewCategory] = useState({ name: '' })
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'admin') {
+      navigate('/login')
+    }
+  }, [currentUser, navigate])
 
   const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {}
 
@@ -21,7 +29,7 @@ const Admin: React.FC = () => {
   useEffect(() => { refresh() }, [tenant.apiBaseUrl])
 
   const createCategory = async () => {
-    if (!newCategory.name) return
+    if (!newCategory.name.trim()) return
     await axios.post(`${tenant.apiBaseUrl}/categories`, newCategory, auth)
     setNewCategory({ name: '' })
     refresh()
@@ -29,7 +37,7 @@ const Admin: React.FC = () => {
 
   const createProduct = async () => {
     const { name, description, price, image, categoryId } = newProduct
-    if (!name || !categoryId) return
+    if (!name.trim() || !categoryId) return
     await axios.post(`${tenant.apiBaseUrl}/products`, { name, description, price: Number(price), image, categoryId }, auth)
     setNewProduct({ name: '', description: '', price: 0, image: '', categoryId: '' })
     refresh()
@@ -62,7 +70,7 @@ const Admin: React.FC = () => {
             <input className="input" placeholder="Name" value={newProduct.name} onChange={e=>setNewProduct({...newProduct, name: e.target.value})} />
             <input className="input" placeholder="Image URL" value={newProduct.image} onChange={e=>setNewProduct({...newProduct, image: e.target.value})} />
             <input className="input" placeholder="Description" value={newProduct.description} onChange={e=>setNewProduct({...newProduct, description: e.target.value})} />
-            <input className="input" placeholder="Price" type="number" value={newProduct.price} onChange={e=>setNewProduct({...newProduct, price: Number(e.target.value)})} />
+            <input className="input" placeholder="Price" min="0" step="0.01" type="number" value={newProduct.price} onChange={e=>setNewProduct({...newProduct, price: Number(e.target.value)})} />
             <select className="input" value={newProduct.categoryId} onChange={e=>setNewProduct({...newProduct, categoryId: e.target.value})}>
               <option value="">Select Category</option>
               {categories.map((c:any) => <option key={c.id} value={c.id}>{c.name}</option>)}

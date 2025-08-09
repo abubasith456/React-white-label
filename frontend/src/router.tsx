@@ -4,6 +4,7 @@ import DashboardLayout from '@/pages/dashboard/DashboardLayout'
 import Home from '@/pages/dashboard/Home'
 import Products from '@/pages/dashboard/Products'
 import Categories from '@/pages/dashboard/Categories'
+import CategoryProducts from '@/pages/dashboard/CategoryProducts'
 import Cart from '@/pages/dashboard/Cart'
 import Addresses from '@/pages/dashboard/Addresses'
 import Admin from '@/pages/dashboard/Admin'
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: 'products', element: <Products /> },
       { path: 'categories', element: <Categories /> },
+      { path: 'categories/:id', element: <CategoryProducts /> },
       { path: 'cart', element: <Cart /> },
       { path: 'addresses', element: <Addresses /> },
       { path: 'admin', element: <Admin /> },

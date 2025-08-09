@@ -17,8 +17,8 @@ const Products: React.FC = () => {
     <AnimatedContainer>
       <div className="container-page py-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.map(p => (
-          <div key={p.id} className="card">
-            <img src={p.image} alt={p.name} className="w-full h-40 object-cover rounded-md" />
+          <div key={p.id} className="card hover:shadow-lg transition">
+            <img src={p.image} alt={p.name} className="w-full h-44 object-cover rounded-md" />
             <h3 className="mt-3 text-lg font-semibold">{p.name}</h3>
             <p className="text-sm text-gray-600 line-clamp-2">{p.description}</p>
             <div className="mt-3 flex items-center justify-between">

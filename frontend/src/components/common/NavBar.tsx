@@ -4,6 +4,7 @@ import { useApp } from '@/context/AppContext'
 
 export const NavBar: React.FC = () => {
   const { tenant, currentUser, logout } = useApp()
+  const isAdmin = currentUser?.role === 'admin'
   return (
     <header className="bg-white shadow-sm">
       <div className="container-page flex items-center justify-between py-3">
@@ -16,7 +17,9 @@ export const NavBar: React.FC = () => {
           <NavLink to="/categories" className={({isActive}) => isActive ? 'text-brand-primary font-medium' : 'text-gray-700 hover:text-brand-primary'}>Categories</NavLink>
           <NavLink to="/cart" className={({isActive}) => isActive ? 'text-brand-primary font-medium' : 'text-gray-700 hover:text-brand-primary'}>Cart</NavLink>
           <NavLink to="/addresses" className={({isActive}) => isActive ? 'text-brand-primary font-medium' : 'text-gray-700 hover:text-brand-primary'}>Addresses</NavLink>
-          <NavLink to="/admin" className={({isActive}) => isActive ? 'text-brand-primary font-medium' : 'text-gray-700 hover:text-brand-primary'}>Admin</NavLink>
+          {isAdmin && (
+            <NavLink to="/admin" className={({isActive}) => isActive ? 'text-brand-primary font-medium' : 'text-gray-700 hover:text-brand-primary'}>Admin</NavLink>
+          )}
         </nav>
         <div className="flex items-center gap-3">
           {currentUser ? (

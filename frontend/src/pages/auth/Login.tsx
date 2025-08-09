@@ -1,20 +1,34 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useApp } from '@/context/AppContext'
 import { Input } from '@/components/common/Input'
 import { Button } from '@/components/common/Button'
 import { AnimatedContainer } from '@/components/common/AnimatedContainer'
 
+const emailValid = (email: string) => /.+@.+\..+/.test(email)
+
 const Login: React.FC = () => {
   const { tenant, login, isLoading } = useApp()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
   const navigate = useNavigate()
+
+  const isFormValid = useMemo(() => emailValid(email) && password.length >= 4, [email, password])
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await login(email, password)
-    navigate('/')
+    setError('')
+    if (!isFormValid) {
+      setError('Please enter a valid email and password (min 4 chars).')
+      return
+    }
+    try {
+      await login(email, password)
+      navigate('/')
+    } catch (err) {
+      setError('Invalid credentials')
+    }
   }
 
   return (
@@ -26,7 +40,8 @@ const Login: React.FC = () => {
           <form onSubmit={onSubmit} className="space-y-4">
             <Input label="Email" type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
             <Input label="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} required />
-            <Button disabled={isLoading} type="submit" className="w-full">Login</Button>
+            {error && <div className="text-sm text-red-600">{error}</div>}
+            <Button disabled={isLoading || !isFormValid} type="submit" className="w-full">Login</Button>
           </form>
           <div className="flex justify-between mt-4 text-sm">
             <Link to="/forgot" className="text-brand-primary">Forgot password?</Link>
