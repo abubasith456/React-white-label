@@ -21,7 +21,7 @@ const config = JSON.parse(raw)
 const useMongo = !!process.env.MONGODB_URI
 
 // Mongo models
-let TenantModel, UserModel, CategoryModel, ProductModel, AddressModel, CartModel
+let TenantModel, UserModel, CategoryModel, ProductModel, AddressModel, CartModel, OrderModel
 
 async function connectMongo() {
   if (!useMongo) return
@@ -32,6 +32,16 @@ async function connectMongo() {
   const productSchema = new mongoose.Schema({ tenantId: String, id: String, name: String, description: String, price: Number, image: String, categoryId: String })
   const addressSchema = new mongoose.Schema({ tenantId: String, userId: String, id: String, line1: String, line2: String, city: String, state: String, postalCode: String, country: String })
   const cartSchema = new mongoose.Schema({ tenantId: String, userId: String, items: [{ productId: String, quantity: Number }] })
+  const orderSchema = new mongoose.Schema({
+    tenantId: String,
+    userId: String,
+    id: String,
+    addressId: String,
+    items: [{ productId: String, quantity: Number, price: Number, name: String }],
+    total: Number,
+    status: { type: String, default: 'created' },
+    createdAt: { type: Date, default: Date.now }
+  })
 
   TenantModel = mongoose.model('Tenant', tenantSchema)
   UserModel = mongoose.model('User', userSchema)
@@ -39,6 +49,7 @@ async function connectMongo() {
   ProductModel = mongoose.model('Product', productSchema)
   AddressModel = mongoose.model('Address', addressSchema)
   CartModel = mongoose.model('Cart', cartSchema)
+  OrderModel = mongoose.model('Order', orderSchema)
 }
 
 async function seedFromConfig() {
@@ -258,6 +269,72 @@ app.delete('/api/:tenant/cart/:productId', authMiddleware, async (req, res) => {
   res.json({ items })
 })
 
+app.delete('/api/:tenant/cart', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    await CartModel.deleteOne({ tenantId: tenant, userId })
+    return res.json({ ok: true })
+  }
+  const key = `${tenant}:${userId}`
+  memSetCart(key, [])
+  res.json({ ok: true })
+})
+
+// Orders
+app.post('/api/:tenant/orders', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
+  const { addressId } = req.body
+
+  // gather cart
+  let items = []
+  if (useMongo) {
+    const cart = await CartModel.findOne({ tenantId: tenant, userId })
+    const prods = await ProductModel.find({ tenantId: tenant })
+    const idToProd = new Map(prods.map(p => [p.id, p]))
+    items = (cart?.items || []).map(i => ({ productId: i.productId, quantity: i.quantity, price: idToProd.get(i.productId)?.price || 0, name: idToProd.get(i.productId)?.name || 'Product' }))
+    const total = items.reduce((s, it) => s + it.price * it.quantity, 0)
+    const order = await OrderModel.create({ tenantId: tenant, userId, id: nanoid(), addressId, items, total, status: 'created' })
+    await CartModel.deleteOne({ tenantId: tenant, userId })
+    return res.json({ order })
+  }
+  // in-memory
+  const t = getTenantLocal(tenant); if (!t) return res.status(404).json({ error: 'Unknown tenant' })
+  const key = `${tenant}:${userId}`
+  const memItems = memGetCart(key)
+  const idToProd = new Map(t.products.map(p => [p.id, p]))
+  items = memItems.map(i => ({ productId: i.productId, quantity: i.quantity, price: idToProd.get(i.productId)?.price || 0, name: idToProd.get(i.productId)?.name || 'Product' }))
+  const total = items.reduce((s, it) => s + it.price * it.quantity, 0)
+  const order = { tenantId: tenant, userId, id: nanoid(), addressId, items, total, status: 'created', createdAt: new Date() }
+  memSaveOrder(order)
+  memSetCart(key, [])
+  res.json({ order })
+})
+
+app.get('/api/:tenant/orders', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    const orders = await OrderModel.find({ tenantId: tenant, userId }).sort({ createdAt: -1 })
+    return res.json({ orders })
+  }
+  res.json({ orders: memListOrders(tenant, userId) })
+})
+
+app.get('/api/:tenant/orders/:id', authMiddleware, async (req, res) => {
+  const { tenant, id } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    const order = await OrderModel.findOne({ tenantId: tenant, userId, id })
+    if (!order) return res.status(404).json({ error: 'Not found' })
+    return res.json({ order })
+  }
+  const order = memGetOrder(tenant, userId, id)
+  if (!order) return res.status(404).json({ error: 'Not found' })
+  res.json({ order })
+})
+
 app.get('/api/:tenant/addresses', authMiddleware, async (req, res) => {
   const { tenant } = req.params
   const { userId } = req.session
@@ -321,6 +398,12 @@ function memGetCart(key) { return carts.get(key) || [] }
 function memSetCart(key, value) { carts.set(key, value) }
 function memGetAddresses(key) { return addressesMem.get(key) || [] }
 function memSetAddresses(key, value) { addressesMem.set(key, value) }
+
+// In-memory order store
+const memOrders = []
+function memSaveOrder(order) { memOrders.push(order) }
+function memListOrders(tenantId, userId) { return memOrders.filter(o => o.tenantId === tenantId && o.userId === userId).sort((a,b)=>b.createdAt - a.createdAt) }
+function memGetOrder(tenantId, userId, id) { return memOrders.find(o => o.tenantId === tenantId && o.userId === userId && o.id === id) }
 
 const PORT = process.env.PORT || 4000
 

@@ -1,15 +1,25 @@
 import React from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { AnimatedContainer } from '@/components/common/AnimatedContainer'
 import { Button } from '@/components/common/Button'
 import toast from 'react-hot-toast'
+import { useApp } from '@/context/AppContext'
+import axios from 'axios'
 
 const Payment: React.FC = () => {
   const [params] = useSearchParams()
   const addressId = params.get('addressId')
+  const { tenant, token } = useApp()
+  const navigate = useNavigate()
 
-  const pay = () => {
-    toast.success('Payment successful!')
+  const pay = async () => {
+    try {
+      await axios.post(`${tenant.apiBaseUrl}/orders`, { addressId }, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      toast.success('Order placed successfully!')
+      navigate('/')
+    } catch {
+      toast.error('Payment failed')
+    }
   }
 
   return (
