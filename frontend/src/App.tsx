@@ -4,7 +4,7 @@ import { router } from './router'
 import { Toaster } from 'react-hot-toast'
 import { LoadingOverlay } from './components/common/LoadingOverlay'
 import { useApp } from './context/AppContext'
-import { MotionProvider } from './utils/motionConfig'
+import { MotionProvider } from './components/providers/MotionProvider'
 
 const AppInner: React.FC = () => {
   const { isLoading } = useApp()

@@ -26,3 +26,4 @@ export {
 // Animation utilities
 export * from '../../utils/animations'
 export * from '../../utils/motionConfig'
+export { MotionProvider } from '../providers/MotionProvider'

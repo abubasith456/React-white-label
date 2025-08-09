@@ -1,30 +1,10 @@
 import { LazyMotion, domAnimation, domMax } from 'framer-motion'
-import React from 'react'
 
 // Optimized motion features for better performance
 export const motionFeatures = domAnimation
 
 // Advanced motion features (load only when needed)
 export const advancedMotionFeatures = domMax
-
-// Motion config provider for the entire app
-interface MotionProviderProps {
-  children: React.ReactNode
-  features?: any
-  strict?: boolean
-}
-
-export const MotionProvider: React.FC<MotionProviderProps> = ({
-  children,
-  features = motionFeatures,
-  strict = true
-}) => {
-  return (
-    <LazyMotion features={features} strict={strict}>
-      {children}
-    </LazyMotion>
-  )
-}
 
 // Global animation settings that respect user preferences
 export const getGlobalAnimationSettings = () => {

@@ -178,8 +178,42 @@ export const CountingNumber: React.FC<CountingNumberProps> = ({
     triggerOnce: true,
     threshold: 0.1,
   })
+  const [displayValue, setDisplayValue] = useState(from)
 
   const shouldAnimate = !prefersReducedMotion()
+
+  useEffect(() => {
+    if (!shouldAnimate || !inView) {
+      setDisplayValue(to)
+      return
+    }
+
+    const timer = setTimeout(() => {
+      const startTime = Date.now()
+      const startValue = from
+      const endValue = to
+      const animationDuration = duration * 1000
+
+      const updateValue = () => {
+        const elapsed = Date.now() - startTime
+        const progress = Math.min(elapsed / animationDuration, 1)
+        
+        // Easing function (ease out)
+        const easedProgress = 1 - Math.pow(1 - progress, 3)
+        
+        const currentValue = startValue + (endValue - startValue) * easedProgress
+        setDisplayValue(currentValue)
+
+        if (progress < 1) {
+          requestAnimationFrame(updateValue)
+        }
+      }
+
+      requestAnimationFrame(updateValue)
+    }, delay * 1000)
+
+    return () => clearTimeout(timer)
+  }, [from, to, duration, delay, shouldAnimate, inView])
 
   return (
     <motion.span
@@ -190,34 +224,7 @@ export const CountingNumber: React.FC<CountingNumberProps> = ({
       transition={{ delay }}
     >
       {prefix}
-      {shouldAnimate && inView ? (
-        <motion.span
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay }}
-        >
-          <motion.span
-            key={`${from}-${to}`}
-            initial={from}
-            animate={to}
-            transition={{
-              duration,
-              delay,
-              ease: 'easeOut',
-            }}
-            onUpdate={(value) => {
-              const element = document.getElementById(`counter-${from}-${to}`)
-              if (element) {
-                element.textContent = formatter(value as number)
-              }
-            }}
-          >
-            <span id={`counter-${from}-${to}`}>{formatter(from)}</span>
-          </motion.span>
-        </motion.span>
-      ) : (
-        formatter(to)
-      )}
+      {formatter(displayValue)}
       {suffix}
     </motion.span>
   )
