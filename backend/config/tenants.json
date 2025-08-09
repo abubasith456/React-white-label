@@ -24,7 +24,11 @@
       ],
       "products": [
         { "id": "p-a-1", "name": "Aurora Headphones", "description": "Crisp, clear sound.", "price": 199.99, "image": "https://images.unsplash.com/photo-1518449958364-1751f105424f?q=80&w=800&auto=format&fit=crop", "categoryId": "c-a-1" },
-        { "id": "p-a-2", "name": "Aurora Lamp", "description": "Light up your home.", "price": 49.99, "image": "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?q=80&w=800&auto=format&fit=crop", "categoryId": "c-a-2" }
+        { "id": "p-a-2", "name": "Aurora Lamp", "description": "Light up your home.", "price": 49.99, "image": "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?q=80&w=800&auto=format&fit=crop", "categoryId": "c-a-2" },
+        { "id": "p-a-3", "name": "Aurora Smartphone", "description": "Fast, sleek, and powerful.", "price": 799.00, "image": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=800&auto=format&fit=crop", "categoryId": "c-a-1" },
+        { "id": "p-a-4", "name": "Aurora Bluetooth Speaker", "description": "Big sound in a small package.", "price": 89.00, "image": "https://images.unsplash.com/photo-1519677100203-a0e668c92439?q=80&w=800&auto=format&fit=crop", "categoryId": "c-a-1" },
+        { "id": "p-a-5", "name": "Aurora Vacuum", "description": "Keep your floors spotless.", "price": 129.00, "image": "https://images.unsplash.com/photo-1581578017421-3f3b42c88f49?q=80&w=800&auto=format&fit=crop", "categoryId": "c-a-2" },
+        { "id": "p-a-6", "name": "Aurora Sofa", "description": "Comfort meets style.", "price": 599.00, "image": "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?q=80&w=800&auto=format&fit=crop", "categoryId": "c-a-2" }
       ]
     },
     "brandB": {
@@ -51,7 +55,11 @@
       ],
       "products": [
         { "id": "p-b-1", "name": "Nimbus Hoodie", "description": "Cozy and stylish.", "price": 69.99, "image": "https://images.unsplash.com/photo-1520975922203-b6c29e41e98e?q=80&w=800&auto=format&fit=crop", "categoryId": "c-b-1" },
-        { "id": "p-b-2", "name": "Nimbus Watch", "description": "Time above the clouds.", "price": 149.99, "image": "https://images.unsplash.com/photo-1516570161787-2fd917215a3d?q=80&w=800&auto=format&fit=crop", "categoryId": "c-b-2" }
+        { "id": "p-b-2", "name": "Nimbus Watch", "description": "Time above the clouds.", "price": 149.99, "image": "https://images.unsplash.com/photo-1516570161787-2fd917215a3d?q=80&w=800&auto=format&fit=crop", "categoryId": "c-b-2" },
+        { "id": "p-b-3", "name": "Nimbus T-Shirt", "description": "Soft cotton tee.", "price": 19.99, "image": "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=800&auto=format&fit=crop", "categoryId": "c-b-1" },
+        { "id": "p-b-4", "name": "Nimbus Jacket", "description": "Warm and water-resistant.", "price": 119.99, "image": "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=800&auto=format&fit=crop", "categoryId": "c-b-1" },
+        { "id": "p-b-5", "name": "Nimbus Sunglasses", "description": "UV protection.", "price": 49.00, "image": "https://images.unsplash.com/photo-1511499767150-a48a237f0083?q=80&w=800&auto=format&fit=crop", "categoryId": "c-b-2" },
+        { "id": "p-b-6", "name": "Nimbus Backpack", "description": "Carry in style.", "price": 79.00, "image": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=800&auto=format&fit=crop", "categoryId": "c-b-2" }
       ]
     }
   }

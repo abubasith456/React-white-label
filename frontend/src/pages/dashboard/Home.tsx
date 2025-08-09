@@ -80,13 +80,21 @@ const Home: React.FC = () => {
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64" />)}
           </div>
         ) : (
-          <HorizontalScroller>
-            {topDeals.map(p => (
-              <div key={p.id} className="min-w-[240px] snap-start">
-                <ProductCard id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
-              </div>
-            ))}
-          </HorizontalScroller>
+          topDeals.length <= 3 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {topDeals.map(p => (
+                <ProductCard key={p.id} id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
+              ))}
+            </div>
+          ) : (
+            <HorizontalScroller>
+              {topDeals.map(p => (
+                <div key={p.id} className="min-w-[240px] snap-start">
+                  <ProductCard id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
+                </div>
+              ))}
+            </HorizontalScroller>
+          )
         )}
       </section>
 
@@ -97,13 +105,21 @@ const Home: React.FC = () => {
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64" />)}
           </div>
         ) : (
-          <HorizontalScroller>
-            {trending.map(p => (
-              <div key={p.id} className="min-w-[240px] snap-start">
-                <ProductCard id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
-              </div>
-            ))}
-          </HorizontalScroller>
+          trending.length <= 3 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {trending.map(p => (
+                <ProductCard key={p.id} id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
+              ))}
+            </div>
+          ) : (
+            <HorizontalScroller>
+              {trending.map(p => (
+                <div key={p.id} className="min-w-[240px] snap-start">
+                  <ProductCard id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
+                </div>
+              ))}
+            </HorizontalScroller>
+          )
         )}
       </section>
     </div>
