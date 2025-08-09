@@ -4,7 +4,6 @@ import { useApp } from '@/context/AppContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   AnimatedText, 
-  AnimatedButton,
   FloatingElement,
   GlowEffect
 } from '@/components/animated'
@@ -43,17 +42,17 @@ const Register: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <FloatingElement intensity={25} speed={3} className="absolute top-20 left-20">
-          <div className="w-32 h-32 bg-gradient-to-br from-green-400/20 to-emerald-400/20 rounded-full blur-xl" />
+          <div className="w-32 h-32 rounded-full blur-xl opacity-30" style={{ background: `rgb(var(--brand-secondary) / 0.2)` }} />
         </FloatingElement>
         <FloatingElement intensity={30} speed={4} className="absolute top-1/3 right-10">
-          <div className="w-24 h-24 bg-gradient-to-br from-teal-400/20 to-cyan-400/20 rounded-full blur-xl" />
+          <div className="w-24 h-24 rounded-full blur-xl opacity-30" style={{ background: `rgb(var(--brand-accent) / 0.2)` }} />
         </FloatingElement>
         <FloatingElement intensity={20} speed={5} className="absolute bottom-1/4 left-1/3">
-          <div className="w-40 h-40 bg-gradient-to-br from-blue-400/20 to-green-400/20 rounded-full blur-xl" />
+          <div className="w-40 h-40 rounded-full blur-xl opacity-30" style={{ background: `rgb(var(--brand-primary) / 0.2)` }} />
         </FloatingElement>
       </div>
 
@@ -83,7 +82,7 @@ const Register: React.FC = () => {
                 className="h-16 w-16 mx-auto rounded-2xl shadow-lg"
               />
             </motion.div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-bold mb-2" style={{ color: `rgb(var(--brand-primary))` }}>
               <AnimatedText variant="letter">
                 Create Account
               </AnimatedText>
@@ -97,7 +96,7 @@ const Register: React.FC = () => {
 
           {/* Register Form */}
           <motion.div variants={fadeInUp}>
-            <GlowEffect glowColor="#10b981" intensity={15}>
+            <GlowEffect glowColor={`rgb(var(--brand-primary))`} intensity={15}>
               <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-8">
                 <form onSubmit={onSubmit} className="space-y-5">
                   {/* Name Input */}
@@ -137,7 +136,9 @@ const Register: React.FC = () => {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:bg-white transition-all duration-300 focus:outline-none"
+                        className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:bg-white transition-all duration-300 focus:outline-none"
+                        onFocus={(e) => e.target.style.borderColor = 'rgb(var(--brand-primary))'}
+                        onBlur={(e) => e.target.style.borderColor = 'rgb(229 231 235)'}
                         placeholder="Enter your email"
                         required
                         whileFocus={{ scale: 1.02 }}
@@ -166,7 +167,9 @@ const Register: React.FC = () => {
                         type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-3 pr-12 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:bg-white transition-all duration-300 focus:outline-none"
+                        className="w-full px-4 py-3 pr-12 bg-white/50 border-2 border-gray-200 rounded-xl focus:bg-white transition-all duration-300 focus:outline-none"
+                        onFocus={(e) => e.target.style.borderColor = 'rgb(var(--brand-primary))'}
+                        onBlur={(e) => e.target.style.borderColor = 'rgb(229 231 235)'}
                         placeholder="Create a strong password"
                         required
                         whileFocus={{ scale: 1.02 }}
@@ -239,22 +242,27 @@ const Register: React.FC = () => {
 
                   {/* Submit Button */}
                   <motion.div variants={fadeInUp}>
-                    <AnimatedButton
+                    <motion.button
                       type="submit"
                       disabled={isLoading || !isFormValid}
-                      loading={isLoading}
-                      className="w-full bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white py-3 text-lg font-medium shadow-xl"
+                      className="w-full py-3 text-lg font-medium shadow-xl rounded-xl text-white transition-all duration-300 disabled:opacity-50"
+                      style={{ 
+                        backgroundColor: `rgb(var(--brand-primary))`,
+                        boxShadow: `0 10px 25px -5px rgb(var(--brand-primary) / 0.3)`
+                      }}
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       {isLoading ? (
                         <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full mx-auto"
                         />
                       ) : (
                         <>Create Account</>
                       )}
-                    </AnimatedButton>
+                    </motion.button>
                   </motion.div>
                 </form>
 
@@ -267,7 +275,8 @@ const Register: React.FC = () => {
                     Already have an account?{' '}
                     <Link 
                       to="/login" 
-                      className="text-green-600 hover:text-green-700 transition-colors font-medium"
+                      className="transition-colors hover:opacity-70 font-medium"
+                      style={{ color: `rgb(var(--brand-primary))` }}
                     >
                       Sign in here
                     </Link>

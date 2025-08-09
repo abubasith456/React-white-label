@@ -4,10 +4,8 @@ import { useApp } from '@/context/AppContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   AnimatedText, 
-  AnimatedButton,
   FloatingElement,
-  GlowEffect,
-  ShimmerEffect
+  GlowEffect
 } from '@/components/animated'
 import { 
   fadeInUp, 
@@ -46,20 +44,20 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <FloatingElement intensity={30} speed={4} className="absolute top-10 left-10">
-          <div className="w-32 h-32 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-xl" />
+          <div className="w-32 h-32 rounded-full blur-xl opacity-30" style={{ background: `rgb(var(--brand-primary) / 0.2)` }} />
         </FloatingElement>
         <FloatingElement intensity={25} speed={3} className="absolute top-1/4 right-20">
-          <div className="w-24 h-24 bg-gradient-to-br from-pink-400/20 to-yellow-400/20 rounded-full blur-xl" />
+          <div className="w-24 h-24 rounded-full blur-xl opacity-30" style={{ background: `rgb(var(--brand-secondary) / 0.2)` }} />
         </FloatingElement>
         <FloatingElement intensity={20} speed={5} className="absolute bottom-20 left-1/4">
-          <div className="w-40 h-40 bg-gradient-to-br from-green-400/20 to-blue-400/20 rounded-full blur-xl" />
+          <div className="w-40 h-40 rounded-full blur-xl opacity-30" style={{ background: `rgb(var(--brand-accent) / 0.2)` }} />
         </FloatingElement>
         <FloatingElement intensity={35} speed={2.5} className="absolute bottom-10 right-10">
-          <div className="w-28 h-28 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-xl" />
+          <div className="w-28 h-28 rounded-full blur-xl opacity-20" style={{ background: `rgb(var(--brand-primary) / 0.3)` }} />
         </FloatingElement>
       </div>
 
@@ -89,7 +87,7 @@ const Login: React.FC = () => {
                 className="h-16 w-16 mx-auto rounded-2xl shadow-lg"
               />
             </motion.div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-bold mb-2" style={{ color: `rgb(var(--brand-primary))` }}>
               <AnimatedText variant="letter">
                 Welcome Back
               </AnimatedText>
@@ -103,7 +101,7 @@ const Login: React.FC = () => {
 
           {/* Login Form */}
           <motion.div variants={fadeInUp}>
-            <GlowEffect glowColor="#6366f1" intensity={15}>
+            <GlowEffect glowColor={`rgb(var(--brand-primary))`} intensity={15}>
               <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-8">
                 <form onSubmit={onSubmit} className="space-y-6">
                   {/* Email Input */}
@@ -118,7 +116,16 @@ const Login: React.FC = () => {
                         onChange={(e) => setEmail(e.target.value)}
                         onFocus={() => setIsEmailFocused(true)}
                         onBlur={() => setIsEmailFocused(false)}
-                        className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white transition-all duration-300 focus:outline-none"
+                        className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:bg-white transition-all duration-300 focus:outline-none"
+                        style={{ '--tw-ring-color': 'rgb(var(--brand-primary))' } as React.CSSProperties}
+                        onFocus={(e) => {
+                          setIsEmailFocused(true)
+                          e.target.style.borderColor = 'rgb(var(--brand-primary))'
+                        }}
+                        onBlur={(e) => {
+                          setIsEmailFocused(false)
+                          e.target.style.borderColor = 'rgb(229 231 235)'
+                        }}
                         placeholder="Enter your email"
                         required
                         whileFocus={{ scale: 1.02 }}
@@ -127,7 +134,8 @@ const Login: React.FC = () => {
                       <AnimatePresence>
                         {isEmailFocused && (
                           <motion.div
-                            className="absolute inset-0 border-2 border-blue-500 rounded-xl pointer-events-none"
+                            className="absolute inset-0 border-2 rounded-xl pointer-events-none"
+                            style={{ borderColor: `rgb(var(--brand-primary))` }}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
@@ -135,16 +143,19 @@ const Login: React.FC = () => {
                           />
                         )}
                       </AnimatePresence>
-                      {emailValid(email) && (
-                        <motion.div
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500"
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{ type: 'spring', damping: 15, stiffness: 300 }}
-                        >
-                          ✅
-                        </motion.div>
-                      )}
+                                              {emailValid(email) && (
+                          <motion.div
+                            className="absolute right-3 top-1/2 -translate-y-1/2"
+                            style={{ color: `rgb(var(--brand-accent))` }}
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: 'spring', damping: 15, stiffness: 300 }}
+                          >
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </motion.div>
+                        )}
                     </div>
                   </motion.div>
 
@@ -158,9 +169,15 @@ const Login: React.FC = () => {
                         type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        onFocus={() => setIsPasswordFocused(true)}
-                        onBlur={() => setIsPasswordFocused(false)}
-                        className="w-full px-4 py-3 pr-12 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:bg-white transition-all duration-300 focus:outline-none"
+                        onFocus={(e) => {
+                          setIsPasswordFocused(true)
+                          e.target.style.borderColor = 'rgb(var(--brand-primary))'
+                        }}
+                        onBlur={(e) => {
+                          setIsPasswordFocused(false)
+                          e.target.style.borderColor = 'rgb(229 231 235)'
+                        }}
+                        className="w-full px-4 py-3 pr-12 bg-white/50 border-2 border-gray-200 rounded-xl focus:bg-white transition-all duration-300 focus:outline-none"
                         placeholder="Enter your password"
                         required
                         whileFocus={{ scale: 1.02 }}
@@ -182,7 +199,8 @@ const Login: React.FC = () => {
                       <AnimatePresence>
                         {isPasswordFocused && (
                           <motion.div
-                            className="absolute inset-0 border-2 border-blue-500 rounded-xl pointer-events-none"
+                            className="absolute inset-0 border-2 rounded-xl pointer-events-none"
+                            style={{ borderColor: `rgb(var(--brand-primary))` }}
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
@@ -190,16 +208,19 @@ const Login: React.FC = () => {
                           />
                         )}
                       </AnimatePresence>
-                      {password.length >= 4 && (
-                        <motion.div
-                          className="absolute right-10 top-1/2 -translate-y-1/2 text-green-500"
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{ type: 'spring', damping: 15, stiffness: 300 }}
-                        >
-                          ✅
-                        </motion.div>
-                      )}
+                                              {password.length >= 4 && (
+                          <motion.div
+                            className="absolute right-10 top-1/2 -translate-y-1/2"
+                            style={{ color: `rgb(var(--brand-accent))` }}
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ type: 'spring', damping: 15, stiffness: 300 }}
+                          >
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </motion.div>
+                        )}
                     </div>
                   </motion.div>
 
@@ -225,22 +246,27 @@ const Login: React.FC = () => {
 
                   {/* Submit Button */}
                   <motion.div variants={fadeInUp}>
-                    <AnimatedButton
+                    <motion.button
                       type="submit"
                       disabled={isLoading || !isFormValid}
-                      loading={isLoading}
-                      className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white py-3 text-lg font-medium shadow-xl"
+                      className="w-full py-3 text-lg font-medium shadow-xl rounded-xl text-white transition-all duration-300 disabled:opacity-50"
+                      style={{ 
+                        backgroundColor: `rgb(var(--brand-primary))`,
+                        boxShadow: `0 10px 25px -5px rgb(var(--brand-primary) / 0.3)`
+                      }}
+                      whileHover={{ scale: 1.02, y: -2 }}
+                      whileTap={{ scale: 0.98 }}
                     >
                       {isLoading ? (
                         <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full mx-auto"
                         />
                       ) : (
                         <>Sign In</>
                       )}
-                    </AnimatedButton>
+                    </motion.button>
                   </motion.div>
                 </form>
 
@@ -263,13 +289,15 @@ const Login: React.FC = () => {
                 >
                   <Link 
                     to="/forgot" 
-                    className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                    className="text-sm transition-colors hover:opacity-70"
+                    style={{ color: `rgb(var(--brand-primary))` }}
                   >
                     Forgot password?
                   </Link>
                   <Link 
                     to="/register" 
-                    className="text-sm text-purple-600 hover:text-purple-700 transition-colors"
+                    className="text-sm transition-colors hover:opacity-70"
+                    style={{ color: `rgb(var(--brand-secondary))` }}
                   >
                     Create account
                   </Link>

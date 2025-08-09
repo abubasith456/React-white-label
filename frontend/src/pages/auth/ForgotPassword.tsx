@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { 
   AnimatedText, 
-  AnimatedButton,
   FloatingElement,
   GlowEffect
 } from '@/components/animated'
@@ -35,17 +34,17 @@ const ForgotPassword: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <FloatingElement intensity={25} speed={3} className="absolute top-20 left-20">
-          <div className="w-32 h-32 bg-gradient-to-br from-orange-400/20 to-amber-400/20 rounded-full blur-xl" />
+          <div className="w-32 h-32 rounded-full blur-xl opacity-30" style={{ background: `rgb(var(--brand-accent) / 0.2)` }} />
         </FloatingElement>
         <FloatingElement intensity={30} speed={4} className="absolute top-1/3 right-10">
-          <div className="w-24 h-24 bg-gradient-to-br from-yellow-400/20 to-orange-400/20 rounded-full blur-xl" />
+          <div className="w-24 h-24 rounded-full blur-xl opacity-30" style={{ background: `rgb(var(--brand-secondary) / 0.2)` }} />
         </FloatingElement>
         <FloatingElement intensity={20} speed={5} className="absolute bottom-1/4 left-1/3">
-          <div className="w-40 h-40 bg-gradient-to-br from-amber-400/20 to-yellow-400/20 rounded-full blur-xl" />
+          <div className="w-40 h-40 rounded-full blur-xl opacity-30" style={{ background: `rgb(var(--brand-primary) / 0.2)` }} />
         </FloatingElement>
       </div>
 
@@ -73,7 +72,7 @@ const ForgotPassword: React.FC = () => {
                 className="h-16 w-16 mx-auto rounded-2xl shadow-lg"
               />
             </motion.div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-bold mb-2" style={{ color: `rgb(var(--brand-primary))` }}>
               <AnimatedText variant="letter">
                 Reset Password
               </AnimatedText>
@@ -87,7 +86,7 @@ const ForgotPassword: React.FC = () => {
 
           {/* Reset Form */}
           <motion.div variants={fadeInUp}>
-            <GlowEffect glowColor="#f59e0b" intensity={15}>
+            <GlowEffect glowColor={`rgb(var(--brand-primary))`} intensity={15}>
               <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl border border-white/20 p-8">
                 <AnimatePresence mode="wait">
                   {done ? (
@@ -115,12 +114,13 @@ const ForgotPassword: React.FC = () => {
                           If an account with that email exists, we've sent you a password reset link.
                         </p>
                       </div>
-                      <Link 
-                        to="/login"
-                        className="inline-block mt-4 text-orange-600 hover:text-orange-700 transition-colors font-medium"
-                      >
-                        Back to Sign In
-                      </Link>
+                                              <Link 
+                          to="/login"
+                          className="inline-block mt-4 transition-colors hover:opacity-70 font-medium"
+                          style={{ color: `rgb(var(--brand-primary))` }}
+                        >
+                          Back to Sign In
+                        </Link>
                     </motion.div>
                   ) : (
                     <motion.form
@@ -140,7 +140,9 @@ const ForgotPassword: React.FC = () => {
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:bg-white transition-all duration-300 focus:outline-none"
+                          className="w-full px-4 py-3 bg-white/50 border-2 border-gray-200 rounded-xl focus:bg-white transition-all duration-300 focus:outline-none"
+                          onFocus={(e) => e.target.style.borderColor = 'rgb(var(--brand-primary))'}
+                          onBlur={(e) => e.target.style.borderColor = 'rgb(229 231 235)'}
                           placeholder="Enter your email address"
                           required
                           whileFocus={{ scale: 1.02 }}
@@ -149,22 +151,27 @@ const ForgotPassword: React.FC = () => {
                       </motion.div>
 
                       <motion.div variants={fadeInUp}>
-                        <AnimatedButton
+                        <motion.button
                           type="submit"
                           disabled={isLoading || !email}
-                          loading={isLoading}
-                          className="w-full bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 hover:from-orange-700 hover:via-amber-700 hover:to-yellow-700 text-white py-3 text-lg font-medium shadow-xl"
+                          className="w-full py-3 text-lg font-medium shadow-xl rounded-xl text-white transition-all duration-300 disabled:opacity-50"
+                          style={{ 
+                            backgroundColor: `rgb(var(--brand-primary))`,
+                            boxShadow: `0 10px 25px -5px rgb(var(--brand-primary) / 0.3)`
+                          }}
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          whileTap={{ scale: 0.98 }}
                         >
                           {isLoading ? (
                             <motion.div
                               animate={{ rotate: 360 }}
                               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                              className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                              className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full mx-auto"
                             />
                           ) : (
                             <>Send Reset Link</>
                           )}
-                        </AnimatedButton>
+                        </motion.button>
                       </motion.div>
 
                       <motion.div 
@@ -173,7 +180,8 @@ const ForgotPassword: React.FC = () => {
                       >
                         <Link 
                           to="/login"
-                          className="text-sm text-orange-600 hover:text-orange-700 transition-colors"
+                          className="text-sm transition-colors hover:opacity-70"
+                          style={{ color: `rgb(var(--brand-primary))` }}
                         >
                           Remember your password? Sign in
                         </Link>
