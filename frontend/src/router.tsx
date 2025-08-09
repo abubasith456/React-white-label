@@ -17,6 +17,7 @@ import Payment from '@/pages/checkout/Payment'
 import CheckoutWizard from '@/pages/checkout/CheckoutWizard'
 import OrderHistory from '@/pages/orders/OrderHistory'
 import OrderConfirmation from '@/pages/orders/OrderConfirmation'
+import NotFound from '@/pages/misc/NotFound'
 
 export const router = createBrowserRouter([
   {
@@ -36,9 +37,11 @@ export const router = createBrowserRouter([
       { path: 'orders/:id', element: <OrderConfirmation /> },
       { path: 'addresses', element: <Addresses /> },
       { path: 'admin', element: <Admin /> },
+      { path: '*', element: <NotFound /> },
     ],
   },
   { path: '/login', element: <Login /> },
   { path: '/register', element: <Register /> },
   { path: '/forgot', element: <ForgotPassword /> },
+  { path: '*', element: <NotFound /> },
 ])
