@@ -79,6 +79,18 @@ const Cart: React.FC = () => {
     </motion.div>
   )
 
+  // Early return if context is not ready
+  if (!tenant) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⏳</div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
       <div className="container-page py-8">

@@ -66,6 +66,18 @@ const Home: React.FC = () => {
     }, 0)
   }, [cart, products])
 
+  // Early return if context is not ready
+  if (!tenant) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⏳</div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="relative">
       {/* Hero Section with enhanced animations */}
@@ -284,7 +296,7 @@ const Home: React.FC = () => {
                 }}
                 onAddToCart={addToCart}
                 onToggleWishlist={toggleWishlist}
-                isInWishlist={wishlist.includes(p.id)}
+                isInWishlist={wishlist?.includes(p.id) || false}
               />
             ))}
           </StaggeredList>
@@ -333,7 +345,7 @@ const Home: React.FC = () => {
                 }}
                 onAddToCart={addToCart}
                 onToggleWishlist={toggleWishlist}
-                isInWishlist={wishlist.includes(p.id)}
+                isInWishlist={wishlist?.includes(p.id) || false}
               />
             ))}
           </StaggeredList>

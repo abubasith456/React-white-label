@@ -54,6 +54,18 @@ const Products: React.FC = () => {
     return categories.find(c => c.id === categoryId)?.name || 'Unknown'
   }
 
+  // Early return if context is not ready
+  if (!tenant) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">⏳</div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50/30">
       <div className="container-page py-8">
@@ -250,19 +262,19 @@ const Products: React.FC = () => {
                 {filtered.map(p => (
                   <div key={p.id}>
                     {viewMode === 'grid' ? (
-                      <AnimatedProductCard
-                        product={{
-                          id: p.id,
-                          name: p.name,
-                          price: p.price,
-                          image: p.image,
-                          description: p.description,
-                          inStock: true,
-                        }}
-                        onAddToCart={() => addToCart(p.id, 1)}
-                        onToggleWishlist={toggleWishlist}
-                        isInWishlist={wishlist.includes(p.id)}
-                      />
+                                             <AnimatedProductCard
+                         product={{
+                           id: p.id,
+                           name: p.name,
+                           price: p.price,
+                           image: p.image,
+                           description: p.description,
+                           inStock: true,
+                         }}
+                         onAddToCart={() => addToCart(p.id, 1)}
+                         onToggleWishlist={toggleWishlist}
+                         isInWishlist={wishlist?.includes(p.id) || false}
+                       />
                     ) : (
                       /* List View */
                       <motion.div 
@@ -284,12 +296,12 @@ const Products: React.FC = () => {
                                 ${p.price.toFixed(2)}
                               </span>
                               <div className="flex items-center gap-2">
-                                <MagneticButton
-                                  className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600"
-                                  onClick={() => toggleWishlist(p.id)}
-                                >
-                                  {wishlist.includes(p.id) ? '❤️' : '🤍'}
-                                </MagneticButton>
+                                                                 <MagneticButton
+                                   className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600"
+                                   onClick={() => toggleWishlist?.(p.id)}
+                                 >
+                                   {wishlist?.includes(p.id) ? '❤️' : '🤍'}
+                                 </MagneticButton>
                                 <AnimatedButton 
                                   variant="primary" 
                                   size="sm"

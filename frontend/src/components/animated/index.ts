@@ -1,6 +1,7 @@
 // Core animated components
 export { AnimatedButton } from './AnimatedButton'
 export { ProductCard } from './ProductCard'
+export { SafeProductCard } from './SafeProductCard'
 export { ProgressBar } from './ProgressBar'
 export { PageTransition, StaggeredList } from './PageTransition'
 
