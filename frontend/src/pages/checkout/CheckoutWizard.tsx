@@ -39,7 +39,12 @@ const CheckoutWizard: React.FC = () => {
     try {
       const { data } = await axios.post(`${tenant.apiBaseUrl}/orders`, { addressId }, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       next()
-      toast.success('Order placed!')
+      toast((t) => (
+        <div className="flex items-center gap-3">
+          <span>Order placed!</span>
+          <a className="text-brand-primary underline" href={`/orders/${data.order.id}`} onClick={() => toast.dismiss(t.id)}>View order</a>
+        </div>
+      ))
       navigate(`/orders/${data.order.id}`)
     } catch {
       toast.error('Payment failed')
@@ -126,7 +131,23 @@ const CheckoutWizard: React.FC = () => {
           <div className="card space-y-3">
             <h2 className="text-lg font-semibold">Review</h2>
             <div className="text-sm text-gray-700">Address ID: {addressId}</div>
-            <div className="text-sm text-gray-700">Items: {cart.length}</div>
+            <ul className="divide-y">
+              {cart.map(item => {
+                const p = products.find((pp:any)=>pp.id===item.productId)
+                return (
+                  <li key={item.productId} className="py-2 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <img src={p?.image} alt={p?.name} className="h-10 w-10 object-cover rounded" />
+                      <div>
+                        <div className="font-medium">{p?.name}</div>
+                        <div className="text-sm text-gray-600">Qty: {item.quantity}</div>
+                      </div>
+                    </div>
+                    <div className="w-24 text-right">${((p?.price||0)*item.quantity).toFixed(2)}</div>
+                  </li>
+                )
+              })}
+            </ul>
             <div className="font-semibold">Total: ${total.toFixed(2)}</div>
             <div className="flex justify-between">
               <Button variant="ghost" onClick={prev}>Prev</Button>

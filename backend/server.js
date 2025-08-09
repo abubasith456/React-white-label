@@ -37,6 +37,15 @@ async function connectMongo() {
     userId: String,
     id: String,
     addressId: String,
+    address: {
+      id: String,
+      line1: String,
+      line2: String,
+      city: String,
+      state: String,
+      postalCode: String,
+      country: String,
+    },
     items: [{ productId: String, quantity: Number, price: Number, name: String }],
     total: Number,
     status: { type: String, default: 'created' },
@@ -295,7 +304,8 @@ app.post('/api/:tenant/orders', authMiddleware, async (req, res) => {
     const idToProd = new Map(prods.map(p => [p.id, p]))
     items = (cart?.items || []).map(i => ({ productId: i.productId, quantity: i.quantity, price: idToProd.get(i.productId)?.price || 0, name: idToProd.get(i.productId)?.name || 'Product' }))
     const total = items.reduce((s, it) => s + it.price * it.quantity, 0)
-    const order = await OrderModel.create({ tenantId: tenant, userId, id: nanoid(), addressId, items, total, status: 'created' })
+    const addr = await AddressModel.findOne({ tenantId: tenant, userId, id: addressId })
+    const order = await OrderModel.create({ tenantId: tenant, userId, id: nanoid(), addressId, address: addr ? { id: addr.id, line1: addr.line1, line2: addr.line2, city: addr.city, state: addr.state, postalCode: addr.postalCode, country: addr.country } : undefined, items, total, status: 'created' })
     await CartModel.deleteOne({ tenantId: tenant, userId })
     return res.json({ order })
   }
@@ -306,7 +316,9 @@ app.post('/api/:tenant/orders', authMiddleware, async (req, res) => {
   const idToProd = new Map(t.products.map(p => [p.id, p]))
   items = memItems.map(i => ({ productId: i.productId, quantity: i.quantity, price: idToProd.get(i.productId)?.price || 0, name: idToProd.get(i.productId)?.name || 'Product' }))
   const total = items.reduce((s, it) => s + it.price * it.quantity, 0)
-  const order = { tenantId: tenant, userId, id: nanoid(), addressId, items, total, status: 'created', createdAt: new Date() }
+  const addrList = memGetAddresses(key)
+  const addr = addrList.find(a => a.id === addressId)
+  const order = { tenantId: tenant, userId, id: nanoid(), addressId, address: addr ? { id: addr.id, line1: addr.line1, line2: addr.line2, city: addr.city, state: addr.state, postalCode: addr.postalCode, country: addr.country } : undefined, items, total, status: 'created', createdAt: new Date() }
   memSaveOrder(order)
   memSetCart(key, [])
   res.json({ order })

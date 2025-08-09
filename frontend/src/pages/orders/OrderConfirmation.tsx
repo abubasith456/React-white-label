@@ -16,6 +16,10 @@ const OrderConfirmation: React.FC = () => {
       .catch(()=>setOrder(null))
   }, [tenant.apiBaseUrl, token, id])
 
+  const downloadInvoice = () => {
+    window.print()
+  }
+
   if (!order) {
     return (
       <AnimatedContainer>
@@ -35,6 +39,24 @@ const OrderConfirmation: React.FC = () => {
           <p className="text-sm text-gray-600">Placed at: {new Date(order.createdAt).toLocaleString()}</p>
         </div>
 
+        {order.address && (
+          <div className="card">
+            <h2 className="text-lg font-semibold mb-2">Delivery Address</h2>
+            <div>{order.address.line1}{order.address.line2 ? `, ${order.address.line2}` : ''}</div>
+            <div className="text-sm text-gray-600">{order.address.city}, {order.address.state} {order.address.postalCode}, {order.address.country}</div>
+          </div>
+        )}
+
+        <div className="card">
+          <h2 className="text-lg font-semibold mb-2">Status</h2>
+          <ol className="text-sm space-y-1">
+            <li className="text-brand-primary">● Created</li>
+            <li className="text-gray-400">○ Packed</li>
+            <li className="text-gray-400">○ Shipped</li>
+            <li className="text-gray-400">○ Delivered</li>
+          </ol>
+        </div>
+
         <div className="card">
           <h2 className="text-lg font-semibold mb-2">Items</h2>
           <ul className="divide-y">
@@ -52,7 +74,8 @@ const OrderConfirmation: React.FC = () => {
         </div>
 
         <div className="flex gap-3">
-          <Link to="/orders" className="btn-primary">View all orders</Link>
+          <button onClick={downloadInvoice} className="btn-primary">Download invoice</button>
+          <Link to="/orders" className="btn-primary bg-brand-secondary">View all orders</Link>
           <Link to="/products" className="btn-primary bg-brand-secondary">Continue shopping</Link>
         </div>
       </div>
