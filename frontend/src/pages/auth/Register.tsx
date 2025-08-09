@@ -57,36 +57,7 @@ const Register: React.FC = () => {
         </FloatingElement>
       </div>
 
-      {/* Decorative Icons */}
-      <motion.div 
-        className="absolute top-20 right-1/4 text-4xl opacity-30"
-        animate={{ 
-          rotate: [0, 360],
-          scale: [1, 1.1, 1]
-        }}
-        transition={{ 
-          duration: 10, 
-          repeat: Infinity,
-          ease: "linear"
-        }}
-      >
-        🚀
-      </motion.div>
-      
-      <motion.div 
-        className="absolute bottom-1/4 right-20 text-3xl opacity-30"
-        animate={{ 
-          y: [0, -20, 0],
-          rotate: [0, 10, -10, 0]
-        }}
-        transition={{ 
-          duration: 5, 
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      >
-        ✨
-      </motion.div>
+
 
       {/* Main Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
@@ -114,12 +85,12 @@ const Register: React.FC = () => {
             </motion.div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
               <AnimatedText variant="letter">
-                Join {tenant.name}! 🎉
+                Create Account
               </AnimatedText>
             </h1>
             <p className="text-gray-600">
               <AnimatedText variant="fade" delay={0.5}>
-                Create your account and start your journey with us
+                Join us and start your journey today
               </AnimatedText>
             </p>
           </motion.div>
@@ -132,7 +103,7 @@ const Register: React.FC = () => {
                   {/* Name Input */}
                   <motion.div variants={fadeInUp}>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      👤 Full Name
+                      Full Name
                     </label>
                     <motion.input
                       type="text"
@@ -159,7 +130,7 @@ const Register: React.FC = () => {
                   {/* Email Input */}
                   <motion.div variants={fadeInUp}>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      📧 Email Address
+                      Email Address
                     </label>
                     <div className="relative">
                       <motion.input
@@ -188,7 +159,7 @@ const Register: React.FC = () => {
                   {/* Password Input */}
                   <motion.div variants={fadeInUp}>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      🔒 Password
+                      Password
                     </label>
                     <div className="relative">
                       <motion.input
@@ -209,8 +180,9 @@ const Register: React.FC = () => {
                         <motion.span
                           animate={{ rotate: showPassword ? 180 : 0 }}
                           transition={{ duration: 0.3 }}
+                          className="text-lg"
                         >
-                          {showPassword ? '🙈' : '👁️'}
+                          {showPassword ? '👁️‍🗨️' : '👁️'}
                         </motion.span>
                       </button>
                       {password.length >= 6 && (
@@ -256,7 +228,10 @@ const Register: React.FC = () => {
                         transition={{ duration: 0.3 }}
                       >
                         <span className="flex items-center gap-2">
-                          ⚠️ {error}
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          {error}
                         </span>
                       </motion.div>
                     )}
@@ -271,14 +246,13 @@ const Register: React.FC = () => {
                       className="w-full bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white py-3 text-lg font-medium shadow-xl"
                     >
                       {isLoading ? (
-                        <motion.span
+                        <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        >
-                          🔄
-                        </motion.span>
+                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                        />
                       ) : (
-                        <>🚀 Create Account</>
+                        <>Create Account</>
                       )}
                     </AnimatedButton>
                   </motion.div>
@@ -293,9 +267,8 @@ const Register: React.FC = () => {
                     Already have an account?{' '}
                     <Link 
                       to="/login" 
-                      className="text-green-600 hover:text-green-700 transition-colors font-medium flex items-center justify-center gap-1"
+                      className="text-green-600 hover:text-green-700 transition-colors font-medium"
                     >
-                      <motion.span whileHover={{ x: -2 }}>🔑</motion.span>
                       Sign in here
                     </Link>
                   </p>
@@ -314,21 +287,18 @@ const Register: React.FC = () => {
                 className="flex items-center gap-2"
                 whileHover={{ scale: 1.05 }}
               >
-                <span>🔒</span>
                 <span>Secure Registration</span>
               </motion.div>
               <motion.div 
                 className="flex items-center gap-2"
                 whileHover={{ scale: 1.05 }}
               >
-                <span>⚡</span>
                 <span>Instant Setup</span>
               </motion.div>
               <motion.div 
                 className="flex items-center gap-2"
                 whileHover={{ scale: 1.05 }}
               >
-                <span>🎉</span>
                 <span>Free to Join</span>
               </motion.div>
             </div>

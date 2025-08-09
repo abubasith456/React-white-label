@@ -63,51 +63,7 @@ const Login: React.FC = () => {
         </FloatingElement>
       </div>
 
-      {/* Decorative Icons */}
-      <motion.div 
-        className="absolute top-20 left-1/4 text-4xl opacity-30"
-        animate={{ 
-          rotate: [0, 360],
-          scale: [1, 1.1, 1]
-        }}
-        transition={{ 
-          duration: 8, 
-          repeat: Infinity,
-          ease: "linear"
-        }}
-      >
-        🔐
-      </motion.div>
-      
-      <motion.div 
-        className="absolute top-1/3 right-1/4 text-3xl opacity-30"
-        animate={{ 
-          y: [0, -20, 0],
-          rotate: [0, -10, 10, 0]
-        }}
-        transition={{ 
-          duration: 6, 
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      >
-        ✨
-      </motion.div>
 
-      <motion.div 
-        className="absolute bottom-1/3 left-20 text-5xl opacity-30"
-        animate={{ 
-          scale: [1, 1.2, 1],
-          rotate: [0, 5, -5, 0]
-        }}
-        transition={{ 
-          duration: 4, 
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      >
-        🚀
-      </motion.div>
 
       {/* Main Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
@@ -135,12 +91,12 @@ const Login: React.FC = () => {
             </motion.div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
               <AnimatedText variant="letter">
-                Welcome Back! 👋
+                Welcome Back
               </AnimatedText>
             </h1>
             <p className="text-gray-600">
               <AnimatedText variant="fade" delay={0.5}>
-                Sign in to {tenant.name} and continue your journey
+                Sign in to your account and continue your journey
               </AnimatedText>
             </p>
           </motion.div>
@@ -153,7 +109,7 @@ const Login: React.FC = () => {
                   {/* Email Input */}
                   <motion.div variants={fadeInUp}>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      📧 Email Address
+                      Email Address
                     </label>
                     <div className="relative">
                       <motion.input
@@ -195,7 +151,7 @@ const Login: React.FC = () => {
                   {/* Password Input */}
                   <motion.div variants={fadeInUp}>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      🔒 Password
+                      Password
                     </label>
                     <div className="relative">
                       <motion.input
@@ -218,8 +174,9 @@ const Login: React.FC = () => {
                         <motion.span
                           animate={{ rotate: showPassword ? 180 : 0 }}
                           transition={{ duration: 0.3 }}
+                          className="text-lg"
                         >
-                          {showPassword ? '🙈' : '👁️'}
+                          {showPassword ? '👁️‍🗨️' : '👁️'}
                         </motion.span>
                       </button>
                       <AnimatePresence>
@@ -257,7 +214,10 @@ const Login: React.FC = () => {
                         transition={{ duration: 0.3 }}
                       >
                         <span className="flex items-center gap-2">
-                          ⚠️ {error}
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          {error}
                         </span>
                       </motion.div>
                     )}
@@ -272,14 +232,13 @@ const Login: React.FC = () => {
                       className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white py-3 text-lg font-medium shadow-xl"
                     >
                       {isLoading ? (
-                        <motion.span
+                        <motion.div
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        >
-                          🔄
-                        </motion.span>
+                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                        />
                       ) : (
-                        <>✨ Sign In</>
+                        <>Sign In</>
                       )}
                     </AnimatedButton>
                   </motion.div>
@@ -295,20 +254,7 @@ const Login: React.FC = () => {
                   <div className="flex-1 border-t border-gray-200"></div>
                 </motion.div>
 
-                {/* Social Login Buttons */}
-                <motion.div 
-                  className="space-y-3"
-                  variants={fadeInUp}
-                >
-                  <motion.button
-                    className="w-full bg-white/70 hover:bg-white border border-gray-200 rounded-xl py-3 px-4 text-gray-700 font-medium transition-all duration-300 flex items-center justify-center gap-3"
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <span className="text-xl">🔐</span>
-                    Continue with Demo Account
-                  </motion.button>
-                </motion.div>
+
 
                 {/* Footer Links */}
                 <motion.div 
@@ -317,17 +263,15 @@ const Login: React.FC = () => {
                 >
                   <Link 
                     to="/forgot" 
-                    className="text-sm text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
+                    className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
                   >
-                    <motion.span whileHover={{ x: -2 }}>🔑</motion.span>
                     Forgot password?
                   </Link>
                   <Link 
                     to="/register" 
-                    className="text-sm text-purple-600 hover:text-purple-700 transition-colors flex items-center gap-1"
+                    className="text-sm text-purple-600 hover:text-purple-700 transition-colors"
                   >
                     Create account
-                    <motion.span whileHover={{ x: 2 }}>🚀</motion.span>
                   </Link>
                 </motion.div>
               </div>
@@ -344,22 +288,19 @@ const Login: React.FC = () => {
                 className="flex items-center gap-2"
                 whileHover={{ scale: 1.05 }}
               >
-                <span>🔒</span>
                 <span>Secure Login</span>
               </motion.div>
               <motion.div 
                 className="flex items-center gap-2"
                 whileHover={{ scale: 1.05 }}
               >
-                <span>🚀</span>
                 <span>Fast Access</span>
               </motion.div>
               <motion.div 
                 className="flex items-center gap-2"
                 whileHover={{ scale: 1.05 }}
               >
-                <span>💫</span>
-                <span>Modern UI</span>
+                <span>Modern Interface</span>
               </motion.div>
             </div>
           </motion.div>
