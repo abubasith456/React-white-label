@@ -16,10 +16,11 @@ const Admin: React.FC = () => {
   const [newAdminEmail, setNewAdminEmail] = useState('')
 
   useEffect(() => {
+    if (token && !currentUser) return // waiting for me endpoint
     if (!currentUser || currentUser.role !== 'admin') {
       navigate('/login')
     }
-  }, [currentUser, navigate])
+  }, [currentUser, token, navigate])
 
   const auth = token ? { headers: { Authorization: `Bearer ${token}` } } : {}
 
@@ -61,6 +62,10 @@ const Admin: React.FC = () => {
   const removeAdmin = async (email: string) => {
     await axios.delete(`${tenant.apiBaseUrl}/admins`, { ...auth, data: { email } })
     refresh()
+  }
+
+  if (!currentUser || currentUser.role !== 'admin') {
+    return null
   }
 
   return (

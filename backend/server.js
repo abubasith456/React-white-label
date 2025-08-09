@@ -459,6 +459,23 @@ app.delete('/api/:tenant/admins', authMiddleware, async (req, res) => {
   res.json({ admins: ten.adminEmails })
 })
 
+app.get('/api/:tenant/auth/me', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    const user = await UserModel.findOne({ tenantId: tenant, id: userId })
+    if (!user) return res.status(404).json({ error: 'Not found' })
+    const t = await TenantModel.findOne({ id: tenant })
+    const role = t?.adminEmails.includes(user.email) ? 'admin' : 'user'
+    return res.json({ user: { id: user.id, name: user.name, email: user.email, role } })
+  }
+  const t = getTenantLocal(tenant)
+  const user = t?.users.find(u => u.id === userId)
+  if (!t || !user) return res.status(404).json({ error: 'Not found' })
+  const role = isAdminTenant(t, user) ? 'admin' : 'user'
+  res.json({ user: { id: user.id, name: user.name, email: user.email, role } })
+})
+
 // In-memory helpers
 const carts = new Map()
 const addressesMem = new Map()

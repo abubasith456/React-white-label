@@ -85,6 +85,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Initialize cart from backend or guest storage
     if (token) {
       void refreshCart()
+      // fetch current user with role
+      api.get('/auth/me').then(({ data }) => setCurrentUser(data.user)).catch(()=>{})
     } else {
       try {
         const stored = JSON.parse(localStorage.getItem(guestCartKey) || '[]') as CartItem[]
