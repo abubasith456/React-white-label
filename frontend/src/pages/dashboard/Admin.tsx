@@ -4,6 +4,7 @@ import axios from 'axios'
 import { Button } from '@/components/common/Button'
 import { AnimatedContainer } from '@/components/common/AnimatedContainer'
 import { useNavigate } from 'react-router-dom'
+import { Modal } from '@/components/common/Modal'
 
 const Admin: React.FC = () => {
   const { tenant, token, currentUser } = useApp()
@@ -15,6 +16,8 @@ const Admin: React.FC = () => {
   const [admins, setAdmins] = useState<string[]>([])
   const [newAdminEmail, setNewAdminEmail] = useState('')
   const [orders, setOrders] = useState<any[]>([])
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [showProductModal, setShowProductModal] = useState(false)
 
   useEffect(() => {
     if (token && !currentUser) return
@@ -132,8 +135,7 @@ const Admin: React.FC = () => {
         <div className="card space-y-3">
           <h2 className="text-xl font-semibold">Categories</h2>
           <div className="flex gap-3">
-            <input className="input" placeholder="New category name" value={newCategory.name} onChange={e=>setNewCategory({ name: e.target.value })} />
-            <Button onClick={createCategory}>Add</Button>
+            <Button onClick={() => setShowCategoryModal(true)}>New Category</Button>
           </div>
           <ul className="flex flex-wrap gap-2">
             {categories.map((c:any) => (
@@ -144,16 +146,8 @@ const Admin: React.FC = () => {
 
         <div className="card space-y-3">
           <h2 className="text-xl font-semibold">Products</h2>
-          <div className="grid md:grid-cols-2 gap-3">
-            <input className="input" placeholder="Name" value={newProduct.name} onChange={e=>setNewProduct({...newProduct, name: e.target.value})} />
-            <input className="input" placeholder="Image URL" value={newProduct.image} onChange={e=>setNewProduct({...newProduct, image: e.target.value})} />
-            <input className="input" placeholder="Description" value={newProduct.description} onChange={e=>setNewProduct({...newProduct, description: e.target.value})} />
-            <input className="input" placeholder="Price" min="0" step="0.01" type="number" value={newProduct.price} onChange={e=>setNewProduct({...newProduct, price: Number(e.target.value)})} />
-            <select className="input" value={newProduct.categoryId} onChange={e=>setNewProduct({...newProduct, categoryId: e.target.value})}>
-              <option value="">Select Category</option>
-              {categories.map((c:any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <Button onClick={createProduct}>Create</Button>
+          <div className="flex gap-3">
+            <Button onClick={() => setShowProductModal(true)}>New Product</Button>
           </div>
           <ul className="divide-y">
             {products.map((p:any) => (
@@ -168,6 +162,26 @@ const Admin: React.FC = () => {
           </ul>
         </div>
       </div>
+
+      {/* Modals */}
+      <Modal open={showCategoryModal} onClose={() => setShowCategoryModal(false)} title="New Category"
+        actions={<><Button variant="ghost" onClick={() => setShowCategoryModal(false)}>Cancel</Button><Button onClick={()=>{createCategory(); setShowCategoryModal(false)}}>Save</Button></>}>
+        <input className="input" placeholder="Category name" value={newCategory.name} onChange={e=>setNewCategory({ name: e.target.value })} />
+      </Modal>
+
+      <Modal open={showProductModal} onClose={() => setShowProductModal(false)} title="New Product"
+        actions={<><Button variant="ghost" onClick={() => setShowProductModal(false)}>Cancel</Button><Button onClick={()=>{createProduct(); setShowProductModal(false)}}>Create</Button></>}>
+        <div className="grid gap-3">
+          <input className="input" placeholder="Name" value={newProduct.name} onChange={e=>setNewProduct({...newProduct, name: e.target.value})} />
+          <input className="input" placeholder="Image URL" value={newProduct.image} onChange={e=>setNewProduct({...newProduct, image: e.target.value})} />
+          <input className="input" placeholder="Description" value={newProduct.description} onChange={e=>setNewProduct({...newProduct, description: e.target.value})} />
+          <input className="input" placeholder="Price" min="0" step="0.01" type="number" value={newProduct.price} onChange={e=>setNewProduct({...newProduct, price: Number(e.target.value)})} />
+          <select className="input" value={newProduct.categoryId} onChange={e=>setNewProduct({...newProduct, categoryId: e.target.value})}>
+            <option value="">Select Category</option>
+            {categories.map((c:any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+      </Modal>
     </AnimatedContainer>
   )
 }
