@@ -14,6 +14,8 @@ import Register from '@/pages/auth/Register'
 import ForgotPassword from '@/pages/auth/ForgotPassword'
 import Checkout from '@/pages/checkout/Checkout'
 import Payment from '@/pages/checkout/Payment'
+import CheckoutWizard from '@/pages/checkout/CheckoutWizard'
+import OrderHistory from '@/pages/orders/OrderHistory'
 
 export const router = createBrowserRouter([
   {
@@ -27,7 +29,9 @@ export const router = createBrowserRouter([
       { path: 'categories/:id', element: <CategoryProducts /> },
       { path: 'cart', element: <Cart /> },
       { path: 'checkout', element: <Checkout /> },
+      { path: 'checkout-wizard', element: <CheckoutWizard /> },
       { path: 'payment', element: <Payment /> },
+      { path: 'orders', element: <OrderHistory /> },
       { path: 'addresses', element: <Addresses /> },
       { path: 'admin', element: <Admin /> },
     ],
