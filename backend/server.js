@@ -1,30 +1,90 @@
 import express from 'express'
 import cors from 'cors'
 import { readFileSync } from 'fs'
-import { join } from 'path'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 import { nanoid } from 'nanoid'
+import dotenv from 'dotenv'
+import mongoose from 'mongoose'
+import PDFDocument from 'pdfkit'
+
+dotenv.config()
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 
-const configPath = join(process.cwd(), 'backend', 'config', 'tenants.json')
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const configPath = join(__dirname, 'config', 'tenants.json')
 const raw = readFileSync(configPath, 'utf-8')
 const config = JSON.parse(raw)
 
-// In-memory state for demo purposes
-const sessions = new Map() // token -> { tenantId, userId }
-const carts = new Map() // key `${tenantId}:${userId}` -> [ { productId, quantity } ]
-const addresses = new Map() // key `${tenantId}:${userId}` -> [ { id, ... } ]
+const useMongo = !!process.env.MONGODB_URI
 
-function getTenant(req) {
-  const { tenant } = req.params
-  const t = config.tenants[tenant]
-  if (!t) return null
-  return t
+// Mongo models
+let TenantModel, UserModel, CategoryModel, ProductModel, AddressModel, CartModel, OrderModel
+
+async function connectMongo() {
+  if (!useMongo) return
+  await mongoose.connect(process.env.MONGODB_URI)
+  const tenantSchema = new mongoose.Schema({ id: String, name: String, branding: Object, strings: Object, adminEmails: [String] })
+  const userSchema = new mongoose.Schema({ tenantId: String, id: String, name: String, email: String, password: String })
+  const categorySchema = new mongoose.Schema({ tenantId: String, id: String, name: String })
+  const productSchema = new mongoose.Schema({ tenantId: String, id: String, name: String, description: String, price: Number, image: String, categoryId: String })
+  const addressSchema = new mongoose.Schema({ tenantId: String, userId: String, id: String, line1: String, line2: String, city: String, state: String, postalCode: String, country: String })
+  const cartSchema = new mongoose.Schema({ tenantId: String, userId: String, items: [{ productId: String, quantity: Number }] })
+  const orderSchema = new mongoose.Schema({
+    tenantId: String,
+    userId: String,
+    id: String,
+    addressId: String,
+    address: {
+      id: String,
+      line1: String,
+      line2: String,
+      city: String,
+      state: String,
+      postalCode: String,
+      country: String,
+    },
+    items: [{ productId: String, quantity: Number, price: Number, name: String }],
+    total: Number,
+    status: { type: String, default: 'created' },
+    createdAt: { type: Date, default: Date.now }
+  })
+
+  TenantModel = mongoose.model('Tenant', tenantSchema)
+  UserModel = mongoose.model('User', userSchema)
+  CategoryModel = mongoose.model('Category', categorySchema)
+  ProductModel = mongoose.model('Product', productSchema)
+  AddressModel = mongoose.model('Address', addressSchema)
+  CartModel = mongoose.model('Cart', cartSchema)
+  OrderModel = mongoose.model('Order', orderSchema)
 }
 
-function isAdmin(tenant, user) {
+async function seedFromConfig() {
+  if (!useMongo) return
+  await TenantModel.deleteMany({})
+  await UserModel.deleteMany({})
+  await CategoryModel.deleteMany({})
+  await ProductModel.deleteMany({})
+
+  for (const tenantId of Object.keys(config.tenants)) {
+    const t = config.tenants[tenantId]
+    await TenantModel.create({ id: t.id, name: t.name, branding: t.branding, strings: t.strings, adminEmails: t.adminEmails })
+    for (const u of t.users) await UserModel.create({ tenantId: t.id, ...u })
+    for (const c of t.categories) await CategoryModel.create({ tenantId: t.id, ...c })
+    for (const p of t.products) await ProductModel.create({ tenantId: t.id, ...p })
+  }
+}
+
+const sessions = new Map()
+
+function getTenantLocal(tenantId) {
+  return config.tenants[tenantId] || null
+}
+
+function isAdminTenant(tenant, user) {
   return tenant.adminEmails.includes(user.email)
 }
 
@@ -37,175 +97,495 @@ function authMiddleware(req, res, next) {
   next()
 }
 
-app.get('/api/:tenant/config', (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
-  const { name, branding, strings } = tenant
-  res.json({ id: tenant.id, name, branding, strings })
+app.get('/api/:tenant/config', async (req, res) => {
+  const { tenant } = req.params
+  if (useMongo) {
+    const t = await TenantModel.findOne({ id: tenant })
+    if (!t) return res.status(404).json({ error: 'Unknown tenant' })
+    return res.json({ id: t.id, name: t.name, branding: t.branding, strings: t.strings })
+  }
+  const t = getTenantLocal(tenant)
+  if (!t) return res.status(404).json({ error: 'Unknown tenant' })
+  const { name, branding, strings } = t
+  res.json({ id: t.id, name, branding, strings })
 })
 
-// Auth
-app.post('/api/:tenant/auth/register', (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
+app.post('/api/:tenant/auth/register', async (req, res) => {
+  const { tenant } = req.params
   const { name, email, password } = req.body
+  if (useMongo) {
+    const existing = await UserModel.findOne({ tenantId: tenant, email })
+    if (existing) return res.status(400).json({ error: 'Email already exists' })
+    const user = await UserModel.create({ tenantId: tenant, id: nanoid(), name, email, password })
+    const token = nanoid(); sessions.set(token, { tenantId: tenant, userId: user.id })
+    const tenantDoc = await TenantModel.findOne({ id: tenant })
+    return res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: tenantDoc?.adminEmails.includes(user.email) ? 'admin' : 'user' } })
+  }
+  const ten = getTenantLocal(tenant); if (!ten) return res.status(404).json({ error: 'Unknown tenant' })
   if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' })
-  if (tenant.users.find(u => u.email === email)) return res.status(400).json({ error: 'Email already exists' })
+  if (ten.users.find(u => u.email === email)) return res.status(400).json({ error: 'Email already exists' })
   const user = { id: nanoid(), name, email, password }
-  tenant.users.push(user)
-  const token = nanoid()
-  sessions.set(token, { tenantId: tenant.id, userId: user.id })
-  res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: isAdmin(tenant, user) ? 'admin' : 'user' } })
+  ten.users.push(user)
+  const token = nanoid(); sessions.set(token, { tenantId: ten.id, userId: user.id })
+  res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: isAdminTenant(ten, user) ? 'admin' : 'user' } })
 })
 
-app.post('/api/:tenant/auth/login', (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
+app.post('/api/:tenant/auth/login', async (req, res) => {
+  const { tenant } = req.params
   const { email, password } = req.body
-  const user = tenant.users.find(u => u.email === email && u.password === password)
+  if (useMongo) {
+    const user = await UserModel.findOne({ tenantId: tenant, email, password })
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' })
+    const token = nanoid(); sessions.set(token, { tenantId: tenant, userId: user.id })
+    const tenantDoc = await TenantModel.findOne({ id: tenant })
+    return res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: tenantDoc?.adminEmails.includes(user.email) ? 'admin' : 'user' } })
+  }
+  const ten = getTenantLocal(tenant); if (!ten) return res.status(404).json({ error: 'Unknown tenant' })
+  const user = ten.users.find(u => u.email === email && u.password === password)
   if (!user) return res.status(401).json({ error: 'Invalid credentials' })
-  const token = nanoid()
-  sessions.set(token, { tenantId: tenant.id, userId: user.id })
-  res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: isAdmin(tenant, user) ? 'admin' : 'user' } })
+  const token = nanoid(); sessions.set(token, { tenantId: ten.id, userId: user.id })
+  res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: isAdminTenant(ten, user) ? 'admin' : 'user' } })
 })
 
 app.post('/api/:tenant/auth/forgot', (req, res) => {
-  // No-op in demo
   res.json({ ok: true })
 })
 
-// Products
-app.get('/api/:tenant/products', (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
-  res.json({ products: tenant.products })
+app.get('/api/:tenant/products', async (req, res) => {
+  const { tenant } = req.params
+  if (useMongo) {
+    const list = await ProductModel.find({ tenantId: tenant })
+    return res.json({ products: list })
+  }
+  const t = getTenantLocal(tenant); if (!t) return res.status(404).json({ error: 'Unknown tenant' })
+  res.json({ products: t.products })
 })
 
-app.post('/api/:tenant/products', authMiddleware, (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
-  const session = req.session
-  const user = tenant.users.find(u => u.id === session.userId)
-  if (!isAdmin(tenant, user)) return res.status(403).json({ error: 'Forbidden' })
+app.post('/api/:tenant/products', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
   const { name, description, price, image, categoryId } = req.body
+  if (useMongo) {
+    const product = await ProductModel.create({ tenantId: tenant, id: nanoid(), name, description: description || '', price: Number(price) || 0, image: image || '', categoryId })
+    return res.json({ product })
+  }
+  const t = getTenantLocal(tenant); if (!t) return res.status(404).json({ error: 'Unknown tenant' })
+  const session = req.session
+  const user = t.users.find(u => u.id === session.userId)
+  if (!isAdminTenant(t, user)) return res.status(403).json({ error: 'Forbidden' })
   const product = { id: nanoid(), name, description: description || '', price: Number(price) || 0, image: image || '', categoryId }
-  tenant.products.push(product)
+  t.products.push(product)
   res.json({ product })
 })
 
-app.delete('/api/:tenant/products/:id', authMiddleware, (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
+app.delete('/api/:tenant/products/:id', authMiddleware, async (req, res) => {
+  const { tenant, id } = req.params
+  if (useMongo) {
+    await ProductModel.deleteOne({ tenantId: tenant, id })
+    return res.json({ ok: true })
+  }
+  const t = getTenantLocal(tenant); if (!t) return res.status(404).json({ error: 'Unknown tenant' })
   const session = req.session
-  const user = tenant.users.find(u => u.id === session.userId)
-  if (!isAdmin(tenant, user)) return res.status(403).json({ error: 'Forbidden' })
-  const { id } = req.params
-  tenant.products = tenant.products.filter(p => p.id !== id)
+  const user = t.users.find(u => u.id === session.userId)
+  if (!isAdminTenant(t, user)) return res.status(403).json({ error: 'Forbidden' })
+  t.products = t.products.filter(p => p.id !== id)
   res.json({ ok: true })
 })
 
-// Categories
-app.get('/api/:tenant/categories', (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
-  res.json({ categories: tenant.categories })
+app.get('/api/:tenant/categories', async (req, res) => {
+  const { tenant } = req.params
+  if (useMongo) {
+    const list = await CategoryModel.find({ tenantId: tenant })
+    return res.json({ categories: list })
+  }
+  const t = getTenantLocal(tenant); if (!t) return res.status(404).json({ error: 'Unknown tenant' })
+  res.json({ categories: t.categories })
 })
 
-app.post('/api/:tenant/categories', authMiddleware, (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
-  const session = req.session
-  const user = tenant.users.find(u => u.id === session.userId)
-  if (!isAdmin(tenant, user)) return res.status(403).json({ error: 'Forbidden' })
+app.post('/api/:tenant/categories', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
   const { name } = req.body
+  if (useMongo) {
+    const category = await CategoryModel.create({ tenantId: tenant, id: nanoid(), name })
+    return res.json({ category })
+  }
+  const t = getTenantLocal(tenant); if (!t) return res.status(404).json({ error: 'Unknown tenant' })
+  const session = req.session
+  const user = t.users.find(u => u.id === session.userId)
+  if (!isAdminTenant(t, user)) return res.status(403).json({ error: 'Forbidden' })
   const category = { id: nanoid(), name }
-  tenant.categories.push(category)
+  t.categories.push(category)
   res.json({ category })
 })
 
-// Users (admin)
-app.get('/api/:tenant/users', authMiddleware, (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
+app.get('/api/:tenant/users', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  if (useMongo) {
+    const list = await UserModel.find({ tenantId: tenant }).select('id name email')
+    return res.json({ users: list })
+  }
+  const t = getTenantLocal(tenant); if (!t) return res.status(404).json({ error: 'Unknown tenant' })
   const session = req.session
-  const user = tenant.users.find(u => u.id === session.userId)
-  if (!isAdmin(tenant, user)) return res.status(403).json({ error: 'Forbidden' })
-  res.json({ users: tenant.users.map(u => ({ id: u.id, name: u.name, email: u.email })) })
+  const user = t.users.find(u => u.id === session.userId)
+  if (!isAdminTenant(t, user)) return res.status(403).json({ error: 'Forbidden' })
+  res.json({ users: t.users.map(u => ({ id: u.id, name: u.name, email: u.email })) })
 })
 
-// Cart
-app.get('/api/:tenant/cart', authMiddleware, (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
-  const key = `${tenant.id}:${req.session.userId}`
-  const items = carts.get(key) || []
+app.get('/api/:tenant/cart', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    const doc = await CartModel.findOne({ tenantId: tenant, userId })
+    return res.json({ items: doc?.items || [] })
+  }
+  const key = `${tenant}:${userId}`
+  const items = memGetCart(key)
   res.json({ items })
 })
 
-app.post('/api/:tenant/cart', authMiddleware, (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
+app.post('/api/:tenant/cart', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
   const { productId, quantity } = req.body
-  const key = `${tenant.id}:${req.session.userId}`
-  const items = carts.get(key) || []
+  if (useMongo) {
+    const doc = (await CartModel.findOne({ tenantId: tenant, userId })) || await CartModel.create({ tenantId: tenant, userId, items: [] })
+    const existing = doc.items.find(i => i.productId === productId)
+    if (existing) existing.quantity += Number(quantity) || 1
+    else doc.items.push({ productId, quantity: Number(quantity) || 1 })
+    await doc.save()
+    return res.json({ items: doc.items })
+  }
+  const key = `${tenant}:${userId}`
+  const items = memGetCart(key)
   const existing = items.find(i => i.productId === productId)
   if (existing) existing.quantity += Number(quantity) || 1
   else items.push({ productId, quantity: Number(quantity) || 1 })
-  carts.set(key, items)
+  memSetCart(key, items)
   res.json({ items })
 })
 
-app.delete('/api/:tenant/cart/:productId', authMiddleware, (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
-  const key = `${tenant.id}:${req.session.userId}`
-  const items = (carts.get(key) || []).filter(i => i.productId !== req.params.productId)
-  carts.set(key, items)
+app.delete('/api/:tenant/cart/:productId', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
+  const { productId } = req.params
+  if (useMongo) {
+    const doc = (await CartModel.findOne({ tenantId: tenant, userId })) || await CartModel.create({ tenantId: tenant, userId, items: [] })
+    doc.items = doc.items.filter(i => i.productId !== productId)
+    await doc.save()
+    return res.json({ items: doc.items })
+  }
+  const key = `${tenant}:${userId}`
+  const items = memGetCart(key).filter(i => i.productId !== productId)
+  memSetCart(key, items)
   res.json({ items })
 })
 
-// Addresses
-app.get('/api/:tenant/addresses', authMiddleware, (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
-  const key = `${tenant.id}:${req.session.userId}`
-  const list = addresses.get(key) || []
-  res.json({ addresses: list })
-})
-
-app.post('/api/:tenant/addresses', authMiddleware, (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
-  const key = `${tenant.id}:${req.session.userId}`
-  const list = addresses.get(key) || []
-  const address = { id: nanoid(), ...req.body }
-  list.push(address)
-  addresses.set(key, list)
-  res.json({ address })
-})
-
-app.put('/api/:tenant/addresses/:id', authMiddleware, (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
-  const key = `${tenant.id}:${req.session.userId}`
-  const list = addresses.get(key) || []
-  const idx = list.findIndex(a => a.id === req.params.id)
-  if (idx === -1) return res.status(404).json({ error: 'Not found' })
-  list[idx] = { ...list[idx], ...req.body }
-  addresses.set(key, list)
-  res.json({ address: list[idx] })
-})
-
-app.delete('/api/:tenant/addresses/:id', authMiddleware, (req, res) => {
-  const tenant = getTenant(req)
-  if (!tenant) return res.status(404).json({ error: 'Unknown tenant' })
-  const key = `${tenant.id}:${req.session.userId}`
-  const list = (addresses.get(key) || []).filter(a => a.id !== req.params.id)
-  addresses.set(key, list)
+app.delete('/api/:tenant/cart', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    await CartModel.deleteOne({ tenantId: tenant, userId })
+    return res.json({ ok: true })
+  }
+  const key = `${tenant}:${userId}`
+  memSetCart(key, [])
   res.json({ ok: true })
 })
 
-const PORT = process.env.PORT || 4000
-app.listen(PORT, () => {
-  console.log(`Backend listening on http://localhost:${PORT}`)
+// Orders
+app.post('/api/:tenant/orders', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
+  const { addressId } = req.body
+
+  // gather cart
+  let items = []
+  if (useMongo) {
+    const cart = await CartModel.findOne({ tenantId: tenant, userId })
+    const prods = await ProductModel.find({ tenantId: tenant })
+    const idToProd = new Map(prods.map(p => [p.id, p]))
+    items = (cart?.items || []).map(i => ({ productId: i.productId, quantity: i.quantity, price: idToProd.get(i.productId)?.price || 0, name: idToProd.get(i.productId)?.name || 'Product' }))
+    const total = items.reduce((s, it) => s + it.price * it.quantity, 0)
+    const addr = await AddressModel.findOne({ tenantId: tenant, userId, id: addressId })
+    const order = await OrderModel.create({ tenantId: tenant, userId, id: nanoid(), addressId, address: addr ? { id: addr.id, line1: addr.line1, line2: addr.line2, city: addr.city, state: addr.state, postalCode: addr.postalCode, country: addr.country } : undefined, items, total, status: 'created' })
+    await CartModel.deleteOne({ tenantId: tenant, userId })
+    return res.json({ order })
+  }
+  // in-memory
+  const t = getTenantLocal(tenant); if (!t) return res.status(404).json({ error: 'Unknown tenant' })
+  const key = `${tenant}:${userId}`
+  const memItems = memGetCart(key)
+  const idToProd = new Map(t.products.map(p => [p.id, p]))
+  items = memItems.map(i => ({ productId: i.productId, quantity: i.quantity, price: idToProd.get(i.productId)?.price || 0, name: idToProd.get(i.productId)?.name || 'Product' }))
+  const total = items.reduce((s, it) => s + it.price * it.quantity, 0)
+  const addrList = memGetAddresses(key)
+  const addr = addrList.find(a => a.id === addressId)
+  const order = { tenantId: tenant, userId, id: nanoid(), addressId, address: addr ? { id: addr.id, line1: addr.line1, line2: addr.line2, city: addr.city, state: addr.state, postalCode: addr.postalCode, country: addr.country } : undefined, items, total, status: 'created', createdAt: new Date() }
+  memSaveOrder(order)
+  memSetCart(key, [])
+  res.json({ order })
 })
+
+app.get('/api/:tenant/orders', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    const orders = await OrderModel.find({ tenantId: tenant, userId }).sort({ createdAt: -1 })
+    return res.json({ orders })
+  }
+  res.json({ orders: memListOrders(tenant, userId) })
+})
+
+app.get('/api/:tenant/orders/:id', authMiddleware, async (req, res) => {
+  const { tenant, id } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    const order = await OrderModel.findOne({ tenantId: tenant, userId, id })
+    if (!order) return res.status(404).json({ error: 'Not found' })
+    return res.json({ order })
+  }
+  const order = memGetOrder(tenant, userId, id)
+  if (!order) return res.status(404).json({ error: 'Not found' })
+  res.json({ order })
+})
+
+app.get('/api/:tenant/orders/admin', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  // admin check
+  if (useMongo) {
+    const t = await TenantModel.findOne({ id: tenant })
+    const user = await UserModel.findOne({ tenantId: tenant, id: req.session.userId })
+    if (!t || !user || !t.adminEmails.includes(user.email)) return res.status(403).json({ error: 'Forbidden' })
+    const orders = await OrderModel.find({ tenantId: tenant }).sort({ createdAt: -1 })
+    return res.json({ orders })
+  }
+  const t = getTenantLocal(tenant)
+  const user = t?.users.find(u => u.id === req.session.userId)
+  if (!t || !user || !isAdminTenant(t, user)) return res.status(403).json({ error: 'Forbidden' })
+  res.json({ orders: memListAllOrders(tenant) })
+})
+
+app.put('/api/:tenant/orders/:id/status', authMiddleware, async (req, res) => {
+  const { tenant, id } = req.params
+  const { status } = req.body
+  const allowed = ['created','packed','shipped','delivered']
+  if (!allowed.includes(status)) return res.status(400).json({ error: 'Invalid status' })
+  // admin check
+  if (useMongo) {
+    const t = await TenantModel.findOne({ id: tenant })
+    const user = await UserModel.findOne({ tenantId: tenant, id: req.session.userId })
+    if (!t || !user || !t.adminEmails.includes(user.email)) return res.status(403).json({ error: 'Forbidden' })
+    const order = await OrderModel.findOneAndUpdate({ tenantId: tenant, id }, { status }, { new: true })
+    if (!order) return res.status(404).json({ error: 'Not found' })
+    return res.json({ order })
+  }
+  const t = getTenantLocal(tenant)
+  const user = t?.users.find(u => u.id === req.session.userId)
+  if (!t || !user || !isAdminTenant(t, user)) return res.status(403).json({ error: 'Forbidden' })
+  const order = memUpdateOrderStatus(tenant, id, status)
+  if (!order) return res.status(404).json({ error: 'Not found' })
+  res.json({ order })
+})
+
+app.get('/api/:tenant/orders/:id/invoice', authMiddleware, async (req, res) => {
+  const { tenant, id } = req.params
+  const { userId } = req.session
+  let order
+  if (useMongo) {
+    order = await OrderModel.findOne({ tenantId: tenant, id })
+  } else {
+    order = memGetOrder(tenant, userId, id) || memGetOrderAny(tenant, id)
+  }
+  if (!order) return res.status(404).json({ error: 'Not found' })
+  // Only owner or admin
+  if (useMongo) {
+    const t = await TenantModel.findOne({ id: tenant })
+    const user = await UserModel.findOne({ tenantId: tenant, id: userId })
+    const isAdmin = !!(t && user && t.adminEmails.includes(user.email))
+    if (!isAdmin && order.userId !== userId) return res.status(403).json({ error: 'Forbidden' })
+  }
+
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', `inline; filename=invoice-${order.id}.pdf`)
+  const doc = new PDFDocument({ size: 'A4', margin: 50 })
+  doc.pipe(res)
+  doc.fontSize(20).text(`Invoice #${order.id}`)
+  doc.moveDown()
+  doc.fontSize(12).text(`Date: ${new Date(order.createdAt).toLocaleString()}`)
+  doc.text(`Tenant: ${tenant}`)
+  if (order.address) {
+    doc.text('Ship To:')
+    doc.text(`${order.address.line1}${order.address.line2 ? ', ' + order.address.line2 : ''}`)
+    doc.text(`${order.address.city}, ${order.address.state} ${order.address.postalCode}`)
+    doc.text(`${order.address.country}`)
+  }
+  doc.moveDown()
+  doc.text('Items:')
+  order.items.forEach((it) => {
+    doc.text(`${it.name} x${it.quantity} - $${(it.price * it.quantity).toFixed(2)}`)
+  })
+  doc.moveDown()
+  doc.fontSize(14).text(`Total: $${order.total.toFixed ? order.total.toFixed(2) : order.total}`)
+  doc.end()
+})
+
+app.get('/api/:tenant/addresses', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    const list = await AddressModel.find({ tenantId: tenant, userId })
+    return res.json({ addresses: list })
+  }
+  const key = `${tenant}:${userId}`
+  res.json({ addresses: memGetAddresses(key) })
+})
+
+app.post('/api/:tenant/addresses', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    const address = await AddressModel.create({ tenantId: tenant, userId, id: nanoid(), ...req.body })
+    return res.json({ address })
+  }
+  const key = `${tenant}:${userId}`
+  const list = memGetAddresses(key)
+  const address = { id: nanoid(), ...req.body }
+  list.push(address)
+  memSetAddresses(key, list)
+  res.json({ address })
+})
+
+app.put('/api/:tenant/addresses/:id', authMiddleware, async (req, res) => {
+  const { tenant, id } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    const updated = await AddressModel.findOneAndUpdate({ tenantId: tenant, userId, id }, req.body, { new: true })
+    if (!updated) return res.status(404).json({ error: 'Not found' })
+    return res.json({ address: updated })
+  }
+  const key = `${tenant}:${userId}`
+  const list = memGetAddresses(key)
+  const idx = list.findIndex(a => a.id === id)
+  if (idx === -1) return res.status(404).json({ error: 'Not found' })
+  list[idx] = { ...list[idx], ...req.body }
+  memSetAddresses(key, list)
+  res.json({ address: list[idx] })
+})
+
+app.delete('/api/:tenant/addresses/:id', authMiddleware, async (req, res) => {
+  const { tenant, id } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    await AddressModel.deleteOne({ tenantId: tenant, userId, id })
+    return res.json({ ok: true })
+  }
+  const key = `${tenant}:${userId}`
+  const list = memGetAddresses(key).filter(a => a.id !== id)
+  memSetAddresses(key, list)
+  res.json({ ok: true })
+})
+
+// Admin management
+app.get('/api/:tenant/admins', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  // ensure caller is admin
+  if (useMongo) {
+    const ten = await TenantModel.findOne({ id: tenant })
+    const user = await UserModel.findOne({ tenantId: tenant, id: req.session.userId })
+    if (!ten || !user || !ten.adminEmails.includes(user.email)) return res.status(403).json({ error: 'Forbidden' })
+    return res.json({ admins: ten.adminEmails })
+  }
+  const ten = getTenantLocal(tenant)
+  const user = ten?.users.find(u => u.id === req.session.userId)
+  if (!ten || !user || !isAdminTenant(ten, user)) return res.status(403).json({ error: 'Forbidden' })
+  res.json({ admins: ten.adminEmails })
+})
+
+app.post('/api/:tenant/admins', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { email } = req.body
+  if (!email) return res.status(400).json({ error: 'Missing email' })
+  if (useMongo) {
+    const ten = await TenantModel.findOne({ id: tenant })
+    const user = await UserModel.findOne({ tenantId: tenant, id: req.session.userId })
+    if (!ten || !user || !ten.adminEmails.includes(user.email)) return res.status(403).json({ error: 'Forbidden' })
+    if (!ten.adminEmails.includes(email)) {
+      ten.adminEmails.push(email)
+      await ten.save()
+    }
+    return res.json({ admins: ten.adminEmails })
+  }
+  const ten = getTenantLocal(tenant)
+  const user = ten?.users.find(u => u.id === req.session.userId)
+  if (!ten || !user || !isAdminTenant(ten, user)) return res.status(403).json({ error: 'Forbidden' })
+  if (!ten.adminEmails.includes(email)) ten.adminEmails.push(email)
+  res.json({ admins: ten.adminEmails })
+})
+
+app.delete('/api/:tenant/admins', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { email } = req.body
+  if (!email) return res.status(400).json({ error: 'Missing email' })
+  if (useMongo) {
+    const ten = await TenantModel.findOne({ id: tenant })
+    const user = await UserModel.findOne({ tenantId: tenant, id: req.session.userId })
+    if (!ten || !user || !ten.adminEmails.includes(user.email)) return res.status(403).json({ error: 'Forbidden' })
+    ten.adminEmails = ten.adminEmails.filter(e => e !== email)
+    await ten.save()
+    return res.json({ admins: ten.adminEmails })
+  }
+  const ten = getTenantLocal(tenant)
+  const user = ten?.users.find(u => u.id === req.session.userId)
+  if (!ten || !user || !isAdminTenant(ten, user)) return res.status(403).json({ error: 'Forbidden' })
+  ten.adminEmails = ten.adminEmails.filter(e => e !== email)
+  res.json({ admins: ten.adminEmails })
+})
+
+app.get('/api/:tenant/auth/me', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { userId } = req.session
+  if (useMongo) {
+    const user = await UserModel.findOne({ tenantId: tenant, id: userId })
+    if (!user) return res.status(404).json({ error: 'Not found' })
+    const t = await TenantModel.findOne({ id: tenant })
+    const role = t?.adminEmails.includes(user.email) ? 'admin' : 'user'
+    return res.json({ user: { id: user.id, name: user.name, email: user.email, role } })
+  }
+  const t = getTenantLocal(tenant)
+  const user = t?.users.find(u => u.id === userId)
+  if (!t || !user) return res.status(404).json({ error: 'Not found' })
+  const role = isAdminTenant(t, user) ? 'admin' : 'user'
+  res.json({ user: { id: user.id, name: user.name, email: user.email, role } })
+})
+
+// In-memory helpers
+const carts = new Map()
+const addressesMem = new Map()
+function memGetCart(key) { return carts.get(key) || [] }
+function memSetCart(key, value) { carts.set(key, value) }
+function memGetAddresses(key) { return addressesMem.get(key) || [] }
+function memSetAddresses(key, value) { addressesMem.set(key, value) }
+
+// In-memory order store
+const memOrders = []
+function memSaveOrder(order) { memOrders.push(order) }
+function memListOrders(tenantId, userId) { return memOrders.filter(o => o.tenantId === tenantId && o.userId === userId).sort((a,b)=>b.createdAt - a.createdAt) }
+function memGetOrder(tenantId, userId, id) { return memOrders.find(o => o.tenantId === tenantId && o.userId === userId && o.id === id) }
+function memGetOrderAny(tenantId, id) { return memOrders.find(o => o.tenantId === tenantId && o.id === id) }
+function memListAllOrders(tenantId) { return memOrders.filter(o => o.tenantId === tenantId).sort((a,b)=>b.createdAt - a.createdAt) }
+function memUpdateOrderStatus(tenantId, id, status) { const o = memOrders.find(x=>x.tenantId===tenantId && x.id===id); if (o) o.status = status; return o }
+
+const PORT = process.env.PORT || 4000
+
+;(async () => {
+  if (useMongo) {
+    await connectMongo()
+    if (process.argv.includes('--seed')) {
+      await seedFromConfig()
+      console.log('Seed completed')
+      process.exit(0)
+    }
+  }
+  app.listen(PORT, () => {
+    console.log(`Backend listening on http://localhost:${PORT} ${useMongo ? '(MongoDB mode)' : '(in-memory mode)'}`)
+  })
+})()

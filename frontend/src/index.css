@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --brand-primary: 59 130 246; /* blue-500 */
-  --brand-secondary: 99 102 241; /* indigo-500 */
-  --brand-accent: 16 185 129; /* emerald-500 */
+  --brand-primary: 59 130 246;
+  --brand-secondary: 99 102 241;
+  --brand-accent: 16 185 129;
 }
 
 html, body, #root {
@@ -13,7 +13,7 @@ html, body, #root {
 }
 
 body {
-  @apply bg-gray-50 text-gray-900;
+  @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100;
 }
 
 .container-page {
@@ -21,13 +21,27 @@ body {
 }
 
 .card {
-  @apply bg-white shadow-soft rounded-xl p-6;
+  @apply bg-white dark:bg-gray-900/60 backdrop-blur shadow-soft rounded-2xl p-6 border border-gray-100 dark:border-gray-800;
 }
 
 .btn-primary {
-  @apply inline-flex items-center justify-center rounded-lg bg-brand-primary text-white px-4 py-2 font-medium shadow hover:opacity-90 transition;
+  @apply inline-flex items-center justify-center rounded-xl bg-brand-primary text-white px-4 py-2 font-medium shadow hover:opacity-90 transition;
 }
 
 .input {
-  @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-primary;
+  @apply w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900/50 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-primary;
+}
+
+/* Toast styling */
+[data-sonner-toaster], .react-hot-toast, .react-hot-toast > div {
+  font-size: 0.9rem !important;
+}
+.react-hot-toast .toast {
+  @apply shadow-soft rounded-xl border border-gray-200 !important;
+}
+.react-hot-toast .toast-success {
+  @apply bg-emerald-50 text-emerald-900 !important;
+}
+.react-hot-toast .toast-error {
+  @apply bg-red-50 text-red-900 !important;
 }

@@ -4,12 +4,16 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node --watch server.js",
-    "start": "node server.js"
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "seed": "node server.js --seed"
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "nanoid": "^4.0.2"
+    "mongoose": "^8.5.1",
+    "nanoid": "^4.0.2",
+    "pdfkit": "^0.15.0"
   }
 }

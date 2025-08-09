@@ -3,7 +3,7 @@ export type TenantConfig = {
   name: string
   logoUrl: string
   theme: {
-    primary: string // rgb string e.g., "59 130 246"
+    primary: string
     secondary: string
     accent: string
   }
@@ -15,26 +15,32 @@ export type TenantConfig = {
     forgotTitle: string
   }
   apiBaseUrl: string
+  banners: string[]
 }
 
 export const tenants: Record<string, TenantConfig> = {
   brandA: {
     id: 'brandA',
-    name: 'Aurora Market',
-    logoUrl: 'https://dummyimage.com/120x40/3b82f6/ffffff&text=Aurora',
+    name: 'WLA',
+    logoUrl: 'https://dummyimage.com/120x40/3b82f6/ffffff&text=WLA',
     theme: {
       primary: '59 130 246',
       secondary: '99 102 241',
       accent: '16 185 129',
     },
     strings: {
-      appTitle: 'Aurora Market',
-      tagline: 'Shine with every purchase',
-      loginTitle: 'Welcome back to Aurora',
-      registerTitle: 'Create your Aurora account',
-      forgotTitle: 'Recover your Aurora account',
+      appTitle: 'WLA',
+      tagline: 'Your white-label commerce accelerator',
+      loginTitle: 'Welcome to WLA',
+      registerTitle: 'Create your WLA account',
+      forgotTitle: 'Recover your WLA account',
     },
     apiBaseUrl: 'http://localhost:4000/api/brandA',
+    banners: [
+      'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1503602642458-232111445657?q=80&w=1600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1512499617640-c2f999098c4b?q=80&w=1600&auto=format&fit=crop',
+    ],
   },
   brandB: {
     id: 'brandB',
@@ -53,6 +59,10 @@ export const tenants: Record<string, TenantConfig> = {
       forgotTitle: 'Password help for Nimbus',
     },
     apiBaseUrl: 'http://localhost:4000/api/brandB',
+    banners: [
+      'https://images.unsplash.com/photo-1512499617640-c2f999098c4b?q=80&w=1600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1520975922203-b6c29e41e98e?q=80&w=1600&auto=format&fit=crop',
+    ],
   },
 }
 
@@ -60,7 +70,8 @@ export function detectTenantId(): string {
   const url = new URL(window.location.href)
   const paramTenant = url.searchParams.get('tenant')
   const stored = localStorage.getItem('tenantId')
-  const candidate = paramTenant || stored || 'brandA'
+  const envDefault = (import.meta as any).env?.VITE_DEFAULT_TENANT as string | undefined
+  const candidate = paramTenant || stored || envDefault || 'brandA'
   if (paramTenant) localStorage.setItem('tenantId', paramTenant)
   return tenants[candidate] ? candidate : 'brandA'
 }
