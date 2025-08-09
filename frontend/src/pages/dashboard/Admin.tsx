@@ -16,6 +16,7 @@ const Admin: React.FC = () => {
   const [admins, setAdmins] = useState<string[]>([])
   const [newAdminEmail, setNewAdminEmail] = useState('')
   const [orders, setOrders] = useState<any[]>([])
+  const [loadingOrders, setLoadingOrders] = useState(true)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [showProductModal, setShowProductModal] = useState(false)
 
@@ -32,7 +33,8 @@ const Admin: React.FC = () => {
     axios.get(`${tenant.apiBaseUrl}/products`).then(r=>setProducts(r.data.products))
     axios.get(`${tenant.apiBaseUrl}/categories`).then(r=>setCategories(r.data.categories))
     axios.get(`${tenant.apiBaseUrl}/admins`, auth).then(r=>setAdmins(r.data.admins)).catch(()=>{})
-    axios.get(`${tenant.apiBaseUrl}/orders/admin`, auth).then(r=>setOrders(r.data.orders)).catch(()=>{})
+    setLoadingOrders(true)
+    axios.get(`${tenant.apiBaseUrl}/orders/admin`, auth).then(r=>setOrders(r.data.orders)).catch(()=>setOrders([])).finally(()=>setLoadingOrders(false))
   }
 
   useEffect(() => { refresh() }, [tenant.apiBaseUrl])
@@ -110,8 +112,11 @@ const Admin: React.FC = () => {
                   <th className="p-2">Invoice</th>
                 </tr>
               </thead>
-              <tbody>
-                {orders.map((o:any) => (
+              <tbody className="align-top">
+                {loadingOrders && (
+                  <tr><td className="p-2" colSpan={5}><div className="space-y-2"><div className="h-4 w-1/3 bg-gray-200 dark:bg-gray-800 animate-pulse rounded" /><div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-800 animate-pulse rounded" /></div></td></tr>
+                )}
+                {!loadingOrders && orders.map((o:any) => (
                   <tr key={o.id} className="border-t">
                     <td className="p-2 font-medium">{o.id}</td>
                     <td className="p-2">
