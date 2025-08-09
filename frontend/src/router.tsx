@@ -16,6 +16,7 @@ import Checkout from '@/pages/checkout/Checkout'
 import Payment from '@/pages/checkout/Payment'
 import CheckoutWizard from '@/pages/checkout/CheckoutWizard'
 import OrderHistory from '@/pages/orders/OrderHistory'
+import OrderConfirmation from '@/pages/orders/OrderConfirmation'
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
       { path: 'checkout-wizard', element: <CheckoutWizard /> },
       { path: 'payment', element: <Payment /> },
       { path: 'orders', element: <OrderHistory /> },
+      { path: 'orders/:id', element: <OrderConfirmation /> },
       { path: 'addresses', element: <Addresses /> },
       { path: 'admin', element: <Admin /> },
     ],

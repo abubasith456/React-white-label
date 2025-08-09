@@ -18,6 +18,9 @@ export const NavBar: React.FC = () => {
             <NavLink to="/categories" className={({isActive}) => isActive ? 'text-brand-primary font-medium' : 'text-gray-700 hover:text-brand-primary'}>Categories</NavLink>
             <NavLink to="/cart" className={({isActive}) => isActive ? 'text-brand-primary font-medium' : 'text-gray-700 hover:text-brand-primary'}>Cart</NavLink>
             <NavLink to="/addresses" className={({isActive}) => isActive ? 'text-brand-primary font-medium' : 'text-gray-700 hover:text-brand-primary'}>Addresses</NavLink>
+            {currentUser && (
+              <NavLink to="/orders" className={({isActive}) => isActive ? 'text-brand-primary font-medium' : 'text-gray-700 hover:text-brand-primary'}>Orders</NavLink>
+            )}
             {isAdmin && (
               <NavLink to="/admin" className={({isActive}) => isActive ? 'text-brand-primary font-medium' : 'text-gray-700 hover:text-brand-primary'}>Admin</NavLink>
             )}

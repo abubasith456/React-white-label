@@ -37,9 +37,10 @@ const CheckoutWizard: React.FC = () => {
 
   const payAndPlaceOrder = async () => {
     try {
-      await axios.post(`${tenant.apiBaseUrl}/orders`, { addressId }, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const { data } = await axios.post(`${tenant.apiBaseUrl}/orders`, { addressId }, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       next()
       toast.success('Order placed!')
+      navigate(`/orders/${data.order.id}`)
     } catch {
       toast.error('Payment failed')
     }

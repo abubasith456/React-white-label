@@ -1,0 +1,63 @@
+import React, { useEffect, useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import axios from 'axios'
+import { useApp } from '@/context/AppContext'
+import { AnimatedContainer } from '@/components/common/AnimatedContainer'
+
+const OrderConfirmation: React.FC = () => {
+  const { id } = useParams<{ id: string }>()
+  const { tenant, token } = useApp()
+  const [order, setOrder] = useState<any | null>(null)
+
+  useEffect(() => {
+    if (!id) return
+    axios.get(`${tenant.apiBaseUrl}/orders/${id}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then(r=>setOrder(r.data.order))
+      .catch(()=>setOrder(null))
+  }, [tenant.apiBaseUrl, token, id])
+
+  if (!order) {
+    return (
+      <AnimatedContainer>
+        <div className="container-page py-10">
+          <div className="card">Loading order...</div>
+        </div>
+      </AnimatedContainer>
+    )
+  }
+
+  return (
+    <AnimatedContainer>
+      <div className="container-page py-10 space-y-6">
+        <div className="card">
+          <h1 className="text-2xl font-semibold">Order Confirmed</h1>
+          <p className="text-sm text-gray-600">Order ID: <span className="font-mono">{order.id}</span></p>
+          <p className="text-sm text-gray-600">Placed at: {new Date(order.createdAt).toLocaleString()}</p>
+        </div>
+
+        <div className="card">
+          <h2 className="text-lg font-semibold mb-2">Items</h2>
+          <ul className="divide-y">
+            {order.items?.map((it:any) => (
+              <li key={it.productId} className="py-3 flex items-center justify-between">
+                <div>
+                  <div className="font-medium">{it.name}</div>
+                  <div className="text-sm text-gray-600">Qty: {it.quantity}</div>
+                </div>
+                <div>${(it.price * it.quantity).toFixed(2)}</div>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 text-right font-semibold">Total: ${order.total?.toFixed?.(2) || order.total}</div>
+        </div>
+
+        <div className="flex gap-3">
+          <Link to="/orders" className="btn-primary">View all orders</Link>
+          <Link to="/products" className="btn-primary bg-brand-secondary">Continue shopping</Link>
+        </div>
+      </div>
+    </AnimatedContainer>
+  )
+}
+
+export default OrderConfirmation
