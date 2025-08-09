@@ -1,14 +1,16 @@
 import express from 'express'
 import cors from 'cors'
 import { readFileSync } from 'fs'
-import { join } from 'path'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 import { nanoid } from 'nanoid'
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 
-const configPath = join(process.cwd(), 'backend', 'config', 'tenants.json')
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const configPath = join(__dirname, 'config', 'tenants.json')
 const raw = readFileSync(configPath, 'utf-8')
 const config = JSON.parse(raw)
 
