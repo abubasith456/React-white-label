@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import DashboardLayout from '@/pages/dashboard/DashboardLayout'
 import Home from '@/pages/dashboard/Home'
 import Products from '@/pages/dashboard/Products'
+import ProductsSimple from '@/pages/dashboard/ProductsSimple'
 import Categories from '@/pages/dashboard/Categories'
 import CategoryProducts from '@/pages/dashboard/CategoryProducts'
 import ProductDetails from '@/pages/dashboard/ProductDetails'
@@ -25,7 +26,7 @@ export const router = createBrowserRouter([
     element: <DashboardLayout />,
     children: [
       { index: true, element: <Home /> },
-      { path: 'products', element: <Products /> },
+      { path: 'products', element: <ProductsSimple /> },
       { path: 'products/:id', element: <ProductDetails /> },
       { path: 'categories', element: <Categories /> },
       { path: 'categories/:id', element: <CategoryProducts /> },

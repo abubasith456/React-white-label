@@ -1,7 +1,6 @@
 import React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useLocation } from 'react-router-dom'
-import { pageTransition, prefersReducedMotion } from '@/utils/animations'
+import { motion } from 'framer-motion'
+import { prefersReducedMotion } from '@/utils/animations'
 
 interface PageTransitionProps {
   children: React.ReactNode
@@ -12,7 +11,6 @@ export const PageTransition: React.FC<PageTransitionProps> = ({
   children,
   className,
 }) => {
-  const location = useLocation()
   const shouldAnimate = !prefersReducedMotion()
 
   if (!shouldAnimate) {
@@ -20,18 +18,14 @@ export const PageTransition: React.FC<PageTransitionProps> = ({
   }
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={location.pathname}
-        className={className}
-        variants={pageTransition}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+    >
+      {children}
+    </motion.div>
   )
 }
 
