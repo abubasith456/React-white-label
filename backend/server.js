@@ -391,6 +391,62 @@ app.delete('/api/:tenant/addresses/:id', authMiddleware, async (req, res) => {
   res.json({ ok: true })
 })
 
+// Admin management
+app.get('/api/:tenant/admins', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  // ensure caller is admin
+  if (useMongo) {
+    const ten = await TenantModel.findOne({ id: tenant })
+    const user = await UserModel.findOne({ tenantId: tenant, id: req.session.userId })
+    if (!ten || !user || !ten.adminEmails.includes(user.email)) return res.status(403).json({ error: 'Forbidden' })
+    return res.json({ admins: ten.adminEmails })
+  }
+  const ten = getTenantLocal(tenant)
+  const user = ten?.users.find(u => u.id === req.session.userId)
+  if (!ten || !user || !isAdminTenant(ten, user)) return res.status(403).json({ error: 'Forbidden' })
+  res.json({ admins: ten.adminEmails })
+})
+
+app.post('/api/:tenant/admins', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { email } = req.body
+  if (!email) return res.status(400).json({ error: 'Missing email' })
+  if (useMongo) {
+    const ten = await TenantModel.findOne({ id: tenant })
+    const user = await UserModel.findOne({ tenantId: tenant, id: req.session.userId })
+    if (!ten || !user || !ten.adminEmails.includes(user.email)) return res.status(403).json({ error: 'Forbidden' })
+    if (!ten.adminEmails.includes(email)) {
+      ten.adminEmails.push(email)
+      await ten.save()
+    }
+    return res.json({ admins: ten.adminEmails })
+  }
+  const ten = getTenantLocal(tenant)
+  const user = ten?.users.find(u => u.id === req.session.userId)
+  if (!ten || !user || !isAdminTenant(ten, user)) return res.status(403).json({ error: 'Forbidden' })
+  if (!ten.adminEmails.includes(email)) ten.adminEmails.push(email)
+  res.json({ admins: ten.adminEmails })
+})
+
+app.delete('/api/:tenant/admins', authMiddleware, async (req, res) => {
+  const { tenant } = req.params
+  const { email } = req.body
+  if (!email) return res.status(400).json({ error: 'Missing email' })
+  if (useMongo) {
+    const ten = await TenantModel.findOne({ id: tenant })
+    const user = await UserModel.findOne({ tenantId: tenant, id: req.session.userId })
+    if (!ten || !user || !ten.adminEmails.includes(user.email)) return res.status(403).json({ error: 'Forbidden' })
+    ten.adminEmails = ten.adminEmails.filter(e => e !== email)
+    await ten.save()
+    return res.json({ admins: ten.adminEmails })
+  }
+  const ten = getTenantLocal(tenant)
+  const user = ten?.users.find(u => u.id === req.session.userId)
+  if (!ten || !user || !isAdminTenant(ten, user)) return res.status(403).json({ error: 'Forbidden' })
+  ten.adminEmails = ten.adminEmails.filter(e => e !== email)
+  res.json({ admins: ten.adminEmails })
+})
+
 // In-memory helpers
 const carts = new Map()
 const addressesMem = new Map()

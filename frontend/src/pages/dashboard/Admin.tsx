@@ -12,6 +12,8 @@ const Admin: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([])
   const [newProduct, setNewProduct] = useState({ name: '', description: '', price: 0, image: '', categoryId: '' })
   const [newCategory, setNewCategory] = useState({ name: '' })
+  const [admins, setAdmins] = useState<string[]>([])
+  const [newAdminEmail, setNewAdminEmail] = useState('')
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'admin') {
@@ -24,6 +26,7 @@ const Admin: React.FC = () => {
   const refresh = () => {
     axios.get(`${tenant.apiBaseUrl}/products`).then(r=>setProducts(r.data.products))
     axios.get(`${tenant.apiBaseUrl}/categories`).then(r=>setCategories(r.data.categories))
+    axios.get(`${tenant.apiBaseUrl}/admins`, auth).then(r=>setAdmins(r.data.admins)).catch(()=>{})
   }
 
   useEffect(() => { refresh() }, [tenant.apiBaseUrl])
@@ -48,9 +51,37 @@ const Admin: React.FC = () => {
     refresh()
   }
 
+  const addAdmin = async () => {
+    if (!newAdminEmail.trim()) return
+    await axios.post(`${tenant.apiBaseUrl}/admins`, { email: newAdminEmail }, auth)
+    setNewAdminEmail('')
+    refresh()
+  }
+
+  const removeAdmin = async (email: string) => {
+    await axios.delete(`${tenant.apiBaseUrl}/admins`, { ...auth, data: { email } })
+    refresh()
+  }
+
   return (
     <AnimatedContainer>
       <div className="container-page py-8 space-y-8">
+        <div className="card space-y-3">
+          <h2 className="text-xl font-semibold">Admins</h2>
+          <div className="flex gap-3">
+            <input className="input" placeholder="admin@example.com" value={newAdminEmail} onChange={e=>setNewAdminEmail(e.target.value)} />
+            <Button onClick={addAdmin}>Add Admin</Button>
+          </div>
+          <ul className="flex flex-wrap gap-2">
+            {admins.map(email => (
+              <li key={email} className="px-3 py-1 rounded-full bg-gray-100 flex items-center gap-2">
+                <span>{email}</span>
+                <button className="text-red-600" onClick={() => removeAdmin(email)}>Remove</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <div className="card space-y-3">
           <h2 className="text-xl font-semibold">Categories</h2>
           <div className="flex gap-3">
