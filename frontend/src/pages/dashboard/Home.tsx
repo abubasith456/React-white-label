@@ -5,6 +5,7 @@ import axios from 'axios'
 import { Carousel } from '@/components/common/Carousel'
 import { ProductCard } from '@/components/common/ProductCard'
 import { Skeleton } from '@/components/common/Skeleton'
+import { HorizontalScroller } from '@/components/common/HorizontalScroller'
 
 type Category = { id: string; name: string }
 
@@ -37,6 +38,8 @@ const Home: React.FC = () => {
   }, [tenant.apiBaseUrl])
 
   const newProducts = useMemo(() => products.slice(0, 6), [products])
+  const topDeals = useMemo(() => [...products].sort((a,b)=>a.price-b.price).slice(0, 10), [products])
+  const trending = useMemo(() => [...products].reverse().slice(0, 10), [products])
 
   return (
     <div>
@@ -70,18 +73,37 @@ const Home: React.FC = () => {
         )}
       </section>
 
-      <section className="container-page pb-14">
-        <h2 className="text-xl font-semibold mb-4">New Arrivals</h2>
+      <section className="container-page pb-8">
+        <h2 className="text-xl font-semibold mb-3">Top Deals</h2>
         {loading ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64" />)}
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {newProducts.map(p => (
-              <ProductCard key={p.id} id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
+          <HorizontalScroller>
+            {topDeals.map(p => (
+              <div key={p.id} className="min-w-[240px] snap-start">
+                <ProductCard id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
+              </div>
             ))}
+          </HorizontalScroller>
+        )}
+      </section>
+
+      <section className="container-page pb-14">
+        <h2 className="text-xl font-semibold mb-3">Trending Now</h2>
+        {loading ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64" />)}
           </div>
+        ) : (
+          <HorizontalScroller>
+            {trending.map(p => (
+              <div key={p.id} className="min-w-[240px] snap-start">
+                <ProductCard id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
+              </div>
+            ))}
+          </HorizontalScroller>
         )}
       </section>
     </div>
