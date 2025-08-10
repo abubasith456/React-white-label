@@ -93,7 +93,7 @@ export function detectTenantId(): string {
   const paramTenant = url.searchParams.get('tenant')
   const stored = localStorage.getItem('tenantId')
   const envDefault = (import.meta as any).env?.VITE_DEFAULT_TENANT as string | undefined
-  const candidate = paramTenant || stored || envDefault || 'brandA'
+  const candidate = paramTenant || stored || envDefault || 'demo'
   if (paramTenant) localStorage.setItem('tenantId', paramTenant)
-  return tenants[candidate] ? candidate : 'brandA'
+  return tenants[candidate] ? candidate : 'demo'
 }
