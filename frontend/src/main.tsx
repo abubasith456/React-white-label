@@ -5,9 +5,8 @@ import './index.css'
 import { AppProvider } from './context/AppContext'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <AppProvider>
-      <App />
-    </AppProvider>
-  </React.StrictMode>,
+  // Removed StrictMode to avoid double-render in dev
+  <AppProvider>
+    <App />
+  </AppProvider>,
 )
