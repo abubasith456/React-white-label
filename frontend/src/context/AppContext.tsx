@@ -171,7 +171,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toast((t) => (
       <div className="flex items-center gap-3">
         <span>{message}</span>
-        <button className="text-brand-primary underline" onClick={() => { window.location.href = '/cart'; toast.dismiss(t.id) }}>View cart</button>
+        <button className="text-brand-primary underline" onClick={() => { window.location.href = (import.meta as any).env.BASE_URL + 'cart'; toast.dismiss(t.id) }}>View cart</button>
       </div>
     ))
   }

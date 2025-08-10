@@ -1,5 +1,5 @@
 import React from 'react'
-import { createBrowserRouter } from 'react-router-dom'
+import { createHashRouter } from 'react-router-dom'
 import DashboardLayout from '@/pages/dashboard/DashboardLayout'
 import Home from '@/pages/dashboard/Home'
 import Products from '@/pages/dashboard/Products'
@@ -19,7 +19,7 @@ import OrderHistory from '@/pages/orders/OrderHistory'
 import OrderConfirmation from '@/pages/orders/OrderConfirmation'
 import NotFound from '@/pages/misc/NotFound'
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     path: '/',
     element: <DashboardLayout />,
@@ -44,4 +44,4 @@ export const router = createBrowserRouter([
   { path: '/register', element: <Register /> },
   { path: '/forgot', element: <ForgotPassword /> },
   { path: '*', element: <NotFound /> },
-], { basename: '/React-white-label' })
+])
