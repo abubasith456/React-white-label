@@ -13,6 +13,7 @@ app.use('/api/:tenant/products', productsRouter)
 app.use('/api/:tenant/categories', categoriesRouter)
 app.use('/api/:tenant/cart', cartRouter)
 app.use('/api/:tenant/addresses', addressesRouter)
-app.use('/api/:tenant/orders', ordersRouter)
+// Register the admin orders route BEFORE the generic orders routes
 app.use('/api/:tenant/orders/admin', adminOrdersRouter)
+app.use('/api/:tenant/orders', ordersRouter)
 app.use('/api/:tenant/admins', adminsRouter)

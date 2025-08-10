@@ -67,10 +67,14 @@ ordersRouter.post('/', requireAuth, async (req, res) => {
 adminOrdersRouter.get('/', requireAdmin, async (req, res) => {
   const { tenant } = req.params
   if (USE_MONGO) {
+    const tenantDoc = await TenantModel.findOne({ id: tenant })
+    if (!tenantDoc) return res.status(404).json({ error: 'Unknown tenant' })
     const orders = await OrderModel.find({ tenantId: tenant }).sort({ createdAt: -1 })
     return res.json({ orders })
   }
-  res.json({ orders: memListAllOrders(tenant) })
+  const t = getTenantLocal(tenant)
+  if (!t) return res.status(404).json({ error: 'Unknown tenant' })
+  return res.json({ orders: memListAllOrders(tenant) })
 })
 
 adminOrdersRouter.put('/:id/status', requireAdmin, async (req, res) => {
