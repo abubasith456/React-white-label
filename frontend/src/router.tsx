@@ -44,4 +44,4 @@ export const router = createBrowserRouter([
   { path: '/register', element: <Register /> },
   { path: '/forgot', element: <ForgotPassword /> },
   { path: '*', element: <NotFound /> },
-])
+], { basename: '/React-white-label' })
