@@ -64,6 +64,28 @@ export const tenants: Record<string, TenantConfig> = {
       'https://images.unsplash.com/photo-1520975922203-b6c29e41e98e?q=80&w=1600&auto=format&fit=crop',
     ],
   },
+  demo: {
+    id: 'demo',
+    name: 'Demo Shop',
+    logoUrl: 'https://dummyimage.com/120x40/3b82f6/ffffff&text=Demo',
+    theme: {
+      primary: '59 130 246',
+      secondary: '99 102 241',
+      accent: '16 185 129',
+    },
+    strings: {
+      appTitle: 'Demo Shop',
+      tagline: 'Preview the WLA experience',
+      loginTitle: 'Welcome to Demo Shop',
+      registerTitle: 'Create your Demo account',
+      forgotTitle: 'Recover your Demo account',
+    },
+    apiBaseUrl: 'https://abubasith86-wla-demo-backend.hf.space/api/demo',
+    banners: [
+      'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1503602642458-232111445657?q=80&w=1600&auto=format&fit=crop',
+    ],
+  },
 }
 
 export function detectTenantId(): string {
