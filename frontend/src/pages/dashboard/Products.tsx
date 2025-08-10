@@ -63,18 +63,22 @@ const Products: React.FC = () => {
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64" />)}
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map(p => (
-              <div key={p.id} className="space-y-2">
-                <ProductCard id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={() => addToCart(p.id, qty(p.id))} />
-                <div className="flex items-center justify-end gap-2">
-                  <button className="px-2 py-1 rounded bg-gray-100" onClick={() => dec(p.id)}>-</button>
-                  <span className="w-8 text-center">{qty(p.id)}</span>
-                  <button className="px-2 py-1 rounded bg-gray-100" onClick={() => inc(p.id)}>+</button>
+          filtered.length === 0 ? (
+            <div className="text-center text-gray-600 py-10">No products available.</div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filtered.map(p => (
+                <div key={p.id} className="space-y-2">
+                  <ProductCard id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={() => addToCart(p.id, qty(p.id))} />
+                  <div className="flex items-center justify-end gap-2">
+                    <button className="px-2 py-1 rounded bg-gray-100" onClick={() => dec(p.id)}>-</button>
+                    <span className="w-8 text-center">{qty(p.id)}</span>
+                    <button className="px-2 py-1 rounded bg-gray-100" onClick={() => inc(p.id)}>+</button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )
         )}
       </div>
     </AnimatedContainer>

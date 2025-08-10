@@ -62,14 +62,18 @@ const Home: React.FC = () => {
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {categories.map(c => (
-              <Link key={c.id} to={`/categories/${c.id}`} className="group card flex flex-col items-center gap-2 hover:shadow-lg transition">
-                <div className="text-3xl">{categoryIcon(c.name)}</div>
-                <div className="font-medium group-hover:text-brand-primary">{c.name}</div>
-              </Link>
-            ))}
-          </div>
+          categories.length === 0 ? (
+            <div className="text-center text-gray-600 py-6">No categories available.</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {categories.map(c => (
+                <Link key={c.id} to={`/categories/${c.id}`} className="group card flex flex-col items-center gap-2 hover:shadow-lg transition">
+                  <div className="text-3xl">{categoryIcon(c.name)}</div>
+                  <div className="font-medium group-hover:text-brand-primary">{c.name}</div>
+                </Link>
+              ))}
+            </div>
+          )
         )}
       </section>
 
@@ -80,7 +84,9 @@ const Home: React.FC = () => {
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64" />)}
           </div>
         ) : (
-          topDeals.length <= 3 ? (
+          topDeals.length === 0 ? (
+            <div className="text-center text-gray-600 py-6">No products available.</div>
+          ) : topDeals.length <= 3 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {topDeals.map(p => (
                 <ProductCard key={p.id} id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
@@ -105,7 +111,9 @@ const Home: React.FC = () => {
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-64" />)}
           </div>
         ) : (
-          trending.length <= 3 ? (
+          trending.length === 0 ? (
+            <div className="text-center text-gray-600 py-6">No products available.</div>
+          ) : trending.length <= 3 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {trending.map(p => (
                 <ProductCard key={p.id} id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />

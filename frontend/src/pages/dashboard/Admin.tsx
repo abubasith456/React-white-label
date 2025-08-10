@@ -89,14 +89,18 @@ const Admin: React.FC = () => {
             <input className="input" placeholder="admin@example.com" value={newAdminEmail} onChange={e=>setNewAdminEmail(e.target.value)} />
             <Button onClick={addAdmin}>Add Admin</Button>
           </div>
-          <ul className="flex flex-wrap gap-2">
-            {admins.map(email => (
-              <li key={email} className="px-3 py-1 rounded-full bg-gray-100 flex items-center gap-2">
-                <span>{email}</span>
-                <button className="text-red-600" onClick={() => removeAdmin(email)}>Remove</button>
-              </li>
-            ))}
-          </ul>
+          {admins.length === 0 ? (
+            <div className="text-sm text-gray-600">No admins yet. Add at least one admin email.</div>
+          ) : (
+            <ul className="flex flex-wrap gap-2">
+              {admins.map(email => (
+                <li key={email} className="px-3 py-1 rounded-full bg-gray-100 flex items-center gap-2">
+                  <span>{email}</span>
+                  <button className="text-red-600" onClick={() => removeAdmin(email)}>Remove</button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="card space-y-3">
@@ -115,6 +119,9 @@ const Admin: React.FC = () => {
               <tbody className="align-top">
                 {loadingOrders && (
                   <tr><td className="p-2" colSpan={5}><div className="space-y-2"><div className="h-4 w-1/3 bg-gray-200 dark:bg-gray-800 animate-pulse rounded" /><div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-800 animate-pulse rounded" /></div></td></tr>
+                )}
+                {!loadingOrders && orders.length === 0 && (
+                  <tr><td className="p-2 text-gray-600" colSpan={5}>No orders yet.</td></tr>
                 )}
                 {!loadingOrders && orders.map((o:any) => (
                   <tr key={o.id} className="border-t">
@@ -142,11 +149,15 @@ const Admin: React.FC = () => {
           <div className="flex gap-3">
             <Button onClick={() => setShowCategoryModal(true)}>New Category</Button>
           </div>
-          <ul className="flex flex-wrap gap-2">
-            {categories.map((c:any) => (
-              <li key={c.id} className="px-3 py-1 rounded-full bg-gray-100">{c.name}</li>
-            ))}
-          </ul>
+          {categories.length === 0 ? (
+            <div className="text-sm text-gray-600">No categories yet. Create your first category.</div>
+          ) : (
+            <ul className="flex flex-wrap gap-2">
+              {categories.map((c:any) => (
+                <li key={c.id} className="px-3 py-1 rounded-full bg-gray-100">{c.name}</li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="card space-y-3">
@@ -154,17 +165,21 @@ const Admin: React.FC = () => {
           <div className="flex gap-3">
             <Button onClick={() => setShowProductModal(true)}>New Product</Button>
           </div>
-          <ul className="divide-y">
-            {products.map((p:any) => (
-              <li key={p.id} className="py-3 flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{p.name}</div>
-                  <div className="text-sm text-gray-600">${p.price}</div>
-                </div>
-                <button className="text-red-600" onClick={() => deleteProduct(p.id)}>Delete</button>
-              </li>
-            ))}
-          </ul>
+          {products.length === 0 ? (
+            <div className="text-sm text-gray-600">No products yet. Add your first product.</div>
+          ) : (
+            <ul className="divide-y">
+              {products.map((p:any) => (
+                <li key={p.id} className="py-3 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{p.name}</div>
+                    <div className="text-sm text-gray-600">${p.price}</div>
+                  </div>
+                  <button className="text-red-600" onClick={() => deleteProduct(p.id)}>Delete</button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
