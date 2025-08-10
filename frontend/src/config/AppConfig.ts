@@ -18,6 +18,8 @@ export type TenantConfig = {
   banners: string[]
 }
 
+const backendOrigin = ((import.meta as any).env?.VITE_BACKEND_ORIGIN as string | undefined) || ''
+
 export const tenants: Record<string, TenantConfig> = {
   brandA: {
     id: 'brandA',
@@ -35,7 +37,7 @@ export const tenants: Record<string, TenantConfig> = {
       registerTitle: 'Create your WLA account',
       forgotTitle: 'Recover your WLA account',
     },
-    apiBaseUrl: 'http://localhost:4000/api/brandA',
+    apiBaseUrl: `${backendOrigin}/api/brandA`,
     banners: [
       'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1600&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1503602642458-232111445657?q=80&w=1600&auto=format&fit=crop',
@@ -58,10 +60,32 @@ export const tenants: Record<string, TenantConfig> = {
       registerTitle: 'Join Nimbus',
       forgotTitle: 'Password help for Nimbus',
     },
-    apiBaseUrl: 'http://localhost:4000/api/brandB',
+    apiBaseUrl: `${backendOrigin}/api/brandB`,
     banners: [
       'https://images.unsplash.com/photo-1512499617640-c2f999098c4b?q=80&w=1600&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1520975922203-b6c29e41e98e?q=80&w=1600&auto=format&fit=crop',
+    ],
+  },
+  demo: {
+    id: 'demo',
+    name: 'Demo Shop',
+    logoUrl: 'https://dummyimage.com/120x40/111827/ffffff&text=DEMO',
+    theme: {
+      primary: '37 99 235',
+      secondary: '99 102 241',
+      accent: '5 150 105',
+    },
+    strings: {
+      appTitle: 'Demo Shop',
+      tagline: 'Try it out with your own catalog',
+      loginTitle: 'Welcome to Demo Shop',
+      registerTitle: 'Create your Demo account',
+      forgotTitle: 'Recover your Demo account',
+    },
+    apiBaseUrl: `${backendOrigin}/api/demo`,
+    banners: [
+      'https://images.unsplash.com/photo-1520975922203-b6c29e41e98e?q=80&w=1600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1600&auto=format&fit=crop',
     ],
   },
 }
@@ -71,7 +95,7 @@ export function detectTenantId(): string {
   const paramTenant = url.searchParams.get('tenant')
   const stored = localStorage.getItem('tenantId')
   const envDefault = (import.meta as any).env?.VITE_DEFAULT_TENANT as string | undefined
-  const candidate = paramTenant || stored || envDefault || 'brandA'
+  const candidate = paramTenant || stored || envDefault || 'demo'
   if (paramTenant) localStorage.setItem('tenantId', paramTenant)
-  return tenants[candidate] ? candidate : 'brandA'
+  return tenants[candidate] ? candidate : 'demo'
 }
