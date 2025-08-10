@@ -72,11 +72,15 @@ const CategoryProducts: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paged.map((p:any) => (
-                <ProductCard key={p.id} id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
-              ))}
-            </div>
+            {filtered.length === 0 ? (
+              <div className="text-center text-gray-600 py-10">No products in this category yet.</div>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {paged.map((p:any) => (
+                  <ProductCard key={p.id} id={p.id} name={p.name} description={p.description} price={p.price} image={p.image} onAddToCart={addToCart} />
+                ))}
+              </div>
+            )}
             <div className="flex items-center justify-center gap-2 mt-4">
               <Button variant="ghost" onClick={() => setPage(p => Math.max(1, p-1))} disabled={page===1}>Prev</Button>
               <span className="text-sm">Page {page} of {totalPages}</span>
